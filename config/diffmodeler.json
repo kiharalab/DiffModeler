@@ -1,0 +1,45 @@
+
+
+{
+    "phase": "infer",
+    "model": {
+      "path": "best_model/diffusion_best.pth.tar",
+      "unet": {
+            "in_channel": 3,
+            "out_channel": 1,
+            "inner_channel": 32,
+            "norm_groups": 16,
+            "channel_multiplier": [
+                1,
+                2,
+                4,
+                8,
+                8 //waiting to be adjusted if box size adjusted to 32.
+            ],
+            "attn_res": [
+                8 //if not use, we can change to any number out of numbers in "channel_multiplier"
+            ],
+            "res_blocks": 2,
+            "dropout": 0.0
+        },
+      "diffusion": {
+            "box_size": 64,
+            "stride": 32, //to save time, for better performance, you can choose 16.
+            "channels": 1, //sample channel for denoising
+            "loss_type": "solo_dens",
+            "conditional": true // unconditional generation or unconditional generation(super_resolution)
+        },
+      "beta_schedule": { // use munual beta_schedule for acceleration
+            "train": {
+                "n_timestep": 100,
+                "infer_clip":1
+            },
+            "val": {
+                 "n_timestep": 100,
+                "infer_clip":1
+            }
+        },
+      "batch_size": 4,
+      "num_workers": 4
+    }
+}
