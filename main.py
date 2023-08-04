@@ -41,5 +41,8 @@ if __name__ == "__main__":
         diffusion_dir = os.path.join(save_path,"infer_diffusion")
         diff_trace_map=infer_diffem(cur_map_path,diffusion_dir,params)
         print("Diffusion process finished! Traced map saved here %s"%diff_trace_map)
+        #first build a dict from the input text configure file
+        fitting_dict = read_structure_txt(os.path.abspath(params['M']))
+
         #VESPER singl-chain fitting process
 

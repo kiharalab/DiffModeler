@@ -127,13 +127,13 @@ class GeneralDiffusion(nn.Module):
 
 
     @torch.no_grad()
-    def p_sample_loop(self, x_in, continous=False,pred_data=None):
+    def p_sample_loop(self, x_in, continous=False):
         device = x_in.device
         sample_inter = (1 | (self.num_timesteps//10))
         x = x_in
         input_density = x
 
-        x = self.encode_fn(pred_data)
+        x = self.encode_fn(x_in)
         x_norm = torch.sigmoid(x)
 
         #shape = x.shape
@@ -152,5 +152,5 @@ class GeneralDiffusion(nn.Module):
         else:
             return ret_img[-x_in.size(0):]
     @torch.no_grad()
-    def super_resolution(self, x_in, continous=False,pred_data=None):
-        return self.p_sample_loop(x_in, continous,pred_data=pred_data)
+    def super_resolution(self, x_in, continous=False):
+        return self.p_sample_loop(x_in, continous)
