@@ -1,4 +1,6 @@
 import os
+import shutil
+
 
 def sort_dict_by_value_desc(d: dict) -> dict:
     """
@@ -33,8 +35,15 @@ def sort_dict_by_value_desc(d: dict) -> dict:
 #     return score_dict
 
 def read_score(new_score_dict,pdb_dir,output_path):
-    listpdb = [x for x in os.listdir(pdb_dir) if ".pdb" in x]
-    listpdb.sort()
+    pdb_dir = os.path.abspath(pdb_dir)
+    listoldpdb = [x for x in os.listdir(pdb_dir) if ".pdb" in x]
+    listoldpdb.sort()
+    for item in listoldpdb:
+        old_pdb_path = os.path.join(pdb_dir,item)
+        key_id = item.split("_")[0]
+        new_pdb_path = os.path.join(pdb_dir,key_id+".pdb")
+        shutil.move(old_pdb_path,new_pdb_path)
+
     list_score=[]
     check_flag=False
     with open(output_path,'r') as file:
@@ -45,9 +54,9 @@ def read_score(new_score_dict,pdb_dir,output_path):
                 score=float(line.strip("\n").replace("LDP Recall Score:",""))
                 list_score.append(score)
 
-    assert len(list_score)==len(listpdb)
-    for kk in range(len(listpdb)):
-        pdb_path = os.path.join(pdb_dir,listpdb[kk])
+    assert len(list_score)==len(listoldpdb)
+    for kk in range(len(list_score)):
+        pdb_path = os.path.join(pdb_dir,"#%d.pdb"%kk)
         score= list_score[kk]
         new_score_dict[pdb_path]=score
     new_score_dict=sort_dict_by_value_desc(new_score_dict)
