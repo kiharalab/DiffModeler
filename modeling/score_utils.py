@@ -36,9 +36,12 @@ def read_score(new_score_dict,pdb_dir,output_path):
     listpdb = [x for x in os.listdir(pdb_dir) if ".pdb" in x]
     listpdb.sort()
     list_score=[]
+    check_flag=False
     with open(output_path,'r') as file:
         for line in file:
-            if line.startswith("LDP Recall Score"):
+            if line.startswith("#0") and not check_flag:
+                check_flag=True
+            if check_flag and line.startswith("LDP Recall Score"):
                 score=float(line.strip("\n").replace("LDP Recall Score:",""))
                 list_score.append(score)
 
