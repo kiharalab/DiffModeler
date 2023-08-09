@@ -52,7 +52,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
                     cur_fit_experiment_path = os.path.join(cur_fit_dir,"fit_experiment_%d"%k)
                     mkdir(cur_fit_experiment_path)
                     output_path = os.path.join(cur_fit_dir,"vesper_simu_output_%d.out"%k)
-                    command_line="python3 %s orig -a %s -t %f -b %s - T %f -g %f -s %f " \
+                    command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
                                  "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s >%s"\
                                  %(vesper_script,fit_target_map,params['vesper']['ldp_cutoff'],gen_reso_map_path,
                                  params['vesper']['simu_cutoff'],params['vesper']['kernel_size'],
