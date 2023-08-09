@@ -46,7 +46,7 @@
       "threshold": 0.01,
       "g": 2,//Bandwidth of the Gaussian filter, (Float), Default value: 2.0.
       "m": 1.0,//After meanshifting merge points distance<[float]. (Float), Default value: 1.0.
-      "f": 0.05,//Filter for representative points, for LDPs, removing points' normalized density<=-f (Float), Default value: 0.0
+      "f": 0.05 //Filter for representative points, for LDPs, removing points' normalized density<=-f (Float), Default value: 0.0
     },
     "vesper": {
       "ldp_cutoff": 0.05,

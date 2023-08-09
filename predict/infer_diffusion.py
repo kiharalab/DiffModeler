@@ -1,5 +1,7 @@
 
 import os
+import shutil
+
 from model.DDIM import DDIM
 from ops.os_operation import mkdir
 from data_processing.generate_input_data import generate_infer_data
@@ -9,6 +11,9 @@ from predict.output_utils import merge_diffusion_map
 from predict.infer_batch import infer_batch
 def infer_diffem(input_map_path,save_dir,params):
     mkdir(save_dir)
+    final_diffusion_path = os.path.join(save_dir,"trace_backbone.mrc")
+    if os.path.exists(final_diffusion_path):
+        return final_diffusion_path
     if not os.path.exists(params['model']['path']):
         print("please configure the diffusion model path in config json file.")
         exit()
@@ -57,4 +62,5 @@ def infer_diffem(input_map_path,save_dir,params):
     max_id = int(max(id_sort))
     final_map_path = os.path.join(final_save_path,"sample_%d"%max_id)
     final_map_path = os.path.join(final_map_path,"sample_%d_c0_mask.mrc"%max_id)
-    return final_map_path
+    shutil.copy(final_map_path,final_diffusion_path)
+    return final_diffusion_path
