@@ -10,23 +10,25 @@ from modeling.map_utils import mask_map_by_pdb
 
 def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
     mkdir(fitting_dir)
+    bandwidth_list=[1,2]
+    fit_target_map_list=[]
+    for bandwidth in bandwidth_list:
+        output_pdb_dir = os.path.join(fitting_dir,"LDP_%s"%(bandwidth))
+        params['LDP']['g']=bandwidth
+        map_ldp_pdb_path = os.path.join(output_pdb_dir,"chain_LDP.pdb")
+        if not os.path.exists(map_ldp_pdb_path):
+            build_ldp(input_map_path,output_pdb_dir,params['LDP'])
+        fit_target_map_list.append(os.path.join(output_pdb_dir,"chain_LDP.mrc"))
+        verify_pdb_path = map_ldp_pdb_path
+    root_fit_target_list = fit_target_map_list
+
     for pdb_path in fitting_dict:
         chain_list = fitting_dict[pdb_path]
         assert len(chain_list)>1
         tmp_chain = chain_list[0]
         backbone_pdb = os.path.join(fitting_dir,"backbone_%s.pdb"%tmp_chain)
         filter_backbone(pdb_path,backbone_pdb)
-        fit_target_map_list=[]
-        bandwidth_list=[1,2]
-
-        for bandwidth in bandwidth_list:
-            output_pdb_dir = os.path.join(fitting_dir,"LDP_%s_%d"%(tmp_chain,bandwidth))
-            params['LDP']['g']=bandwidth
-            map_ldp_pdb_path = os.path.join(output_pdb_dir,"chain_LDP.pdb")
-            if not os.path.exists(map_ldp_pdb_path):
-                build_ldp(input_map_path,output_pdb_dir,params['LDP'])
-            fit_target_map_list.append(os.path.join(output_pdb_dir,"chain_LDP.mrc"))
-            verify_pdb_path = map_ldp_pdb_path
+        fit_target_map_list = root_fit_target_list
         #generate simulated map from the pdb
         gen_reso_map_path = os.path.join(fitting_dir,"simumap_backbone_1A_%s.mrc"%tmp_chain)
         SimuMap1A(backbone_pdb,gen_reso_map_path)
