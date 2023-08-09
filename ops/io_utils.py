@@ -10,3 +10,12 @@ def read_structure_txt(input_file_path):
             structure_dict[input_file_path]=split_info[1:]
     print("structure waiting to be fitted: ",structure_dict)
     return structure_dict
+import pickle
+def load_pickle(path):
+    with open(path,'rb') as file:
+        data=pickle.load(file)
+    return data
+
+def write_pickle(data,path):
+    with open(path,'wb') as file:
+        pickle.dump(data, file)

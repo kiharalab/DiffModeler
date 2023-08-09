@@ -1,6 +1,7 @@
 import mrcfile
 import numpy as np
 from ops.map_coord_utils import permute_ns_coord_to_pdb
+import os
 def process_map_data(input_map_path):
     with mrcfile.open(input_map_path, permissive=True) as mrc:
         orig = mrc.header.origin
@@ -269,3 +270,24 @@ def permute_pdb_coord_to_map(input_coord,mapc,mapr,maps):
     else:
         exit()
     return out_x, out_y, out_z
+
+
+def SimuMap1A(input_path,save_path):
+
+    split_lists=os.path.split(save_path)
+    pdb_name=split_lists[1]
+    pdb_id=pdb_name.replace(".pdb","")
+    map_dir = split_lists[0]
+    reso= 1#random.uniform(5, 10)
+    tmp_file_name=os.path.join(map_dir,pdb_id+'_help.txt')
+    with open(tmp_file_name,'w') as wFile:
+        wFile.write("1\n1\n1\n-" + str(reso) + "\n1\n1\n1\n")
+
+    gen_map_name=save_path
+    #os.chdir(new_map_path)
+    #gen_map_name=pdb_id.upper()+'.mrc'
+    #tmp_file_name=pdb_id+'_help.txt'
+    #new_pdb_path=pdb_name
+    command_line='cat '+tmp_file_name+" | "+'pdb2vol ' + input_path + " " +gen_map_name
+    os.system(command_line)
+    return gen_map_name
