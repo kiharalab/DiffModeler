@@ -41,12 +41,13 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
         for current_chain in chain_list:
             cur_fit_dir = os.path.join(fitting_dir,current_chain)
             mkdir(cur_fit_dir)
-            functToDeleteItems(cur_fit_dir)
+
             score_path = os.path.join(cur_fit_dir,"score.pkl")
-            listfiles = [x for x in os.listdir(cur_fit_dir) if "vesper" in x and ".pdb" in x
-                 and "output" not in x and ".txt" not in x]
+            # listfiles = [x for x in os.listdir(cur_fit_dir) if "vesper" in x and ".pdb" in x
+            #      and "output" not in x and ".txt" not in x]
 
             if not os.path.exists(score_path):
+                functToDeleteItems(cur_fit_dir)
                 #count_model=0
                 new_score_dict={}
                 for k,fit_target_map in enumerate(fit_target_map_list):
