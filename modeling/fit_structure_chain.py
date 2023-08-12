@@ -1,4 +1,4 @@
-from ops.os_operation import mkdir
+from ops.os_operation import mkdir,functToDeleteItems
 from modeling.pdb_utils import filter_backbone,generate_move_structure
 import os
 from graph.build_ldp import build_ldp
@@ -41,6 +41,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
         for current_chain in chain_list:
             cur_fit_dir = os.path.join(fitting_dir,current_chain)
             mkdir(cur_fit_dir)
+            functToDeleteItems(cur_fit_dir)
             score_path = os.path.join(cur_fit_dir,"score.pkl")
             listfiles = [x for x in os.listdir(cur_fit_dir) if "vesper" in x and ".pdb" in x
                  and "output" not in x and ".txt" not in x]
@@ -95,6 +96,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
 
 def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,params,global_mode=0):
     mkdir(output_dir)
+    functToDeleteItems(output_dir)
     #generate backbone from pdb
     backbone_pdb = os.path.join(output_dir,"backbone.pdb")
     filter_backbone(input_pdb_path,backbone_pdb)

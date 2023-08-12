@@ -16,6 +16,12 @@ def execCmd(cmd):
     r.close()
     return text
 
+def functToDeleteItems(fullPathToDir):
+   for itemsInDir in os.listdir(fullPathToDir):
+        if os.path.isdir(os.path.join(fullPathToDir, itemsInDir)):
+            functToDeleteItems(os.path.isdir(os.path.join(fullPathToDir, itemsInDir)))
+        else:
+            os.remove(os.path.join(fullPathToDir,itemsInDir))
 import gzip
 def unzip_gz(file_path):
     new_path = file_path.replace(".gz","")
