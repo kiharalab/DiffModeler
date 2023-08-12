@@ -3,6 +3,7 @@ import os
 from ops.argparser import argparser
 from ops.os_operation import mkdir
 import time
+import shutil
 def init_save_path(origin_map_path):
     save_path = os.path.join(os.getcwd(), 'Predict_Result')
     mkdir(save_path)
@@ -50,4 +51,9 @@ if __name__ == "__main__":
         from modeling.fit_structure_chain import fit_structure_chain
         fit_structure_chain(diff_trace_map,fitting_dict,fitting_dir,params)
 
-
+        #VESPER assembling
+        modeling_dir = os.path.join(save_path,"structure_assembling")
+        from modeling.assemble_structure import assemble_structure
+        source_cif = assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params)
+        output_cif = os.path.join(save_path,"DiffModeler.cif")
+        shutil.copy(source_cif,output_cif)

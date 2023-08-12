@@ -56,6 +56,13 @@
       "angle_spacing": 10,
       "num_models": 100,
       "rank_mode": "C"
+    },
+    "assembling": {
+      "score_cutoff": 0.2,
+      "score_min_cutoff": 50,
+      "score_max_cutoff": 60,
+      "mask_cutoff": 20,
+      "clash_distance": 3,
+        "overlap_ratio_limit": 0.05
     }
-
 }

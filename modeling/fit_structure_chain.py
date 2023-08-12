@@ -8,6 +8,7 @@ from ops.io_utils import load_pickle,write_pickle
 from modeling.score_utils import read_score
 from modeling.map_utils import mask_map_by_pdb
 
+
 def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
     mkdir(fitting_dir)
     bandwidth_list=[1,2]
@@ -92,3 +93,38 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
                 new_fit_target_map_list.append(diff_map_path_new)
             fit_target_map_list = new_fit_target_map_list
 
+def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,params,global_mode=0):
+    mkdir(output_dir)
+    #generate backbone from pdb
+    backbone_pdb = os.path.join(output_dir,"backbone.pdb")
+    filter_backbone(input_pdb_path,backbone_pdb)
+
+    gen_reso_map_path = os.path.join(output_dir,"simumap_backbone_1A.mrc")
+    SimuMap1A(backbone_pdb,gen_reso_map_path)
+
+    kernel_size=2
+    voxel_spacing =  2
+
+    if global_mode==1:
+        output_pdb_path = os.path.join(output_dir,"vesper_globalfit.out")
+        angle_spacing = 10
+    else:
+        output_pdb_path = os.path.join(output_dir,"vesper_localfit.out")
+        angle_spacing = 5
+    score_path = os.path.join(output_dir,"score.pkl")
+    vesper_script = os.path.join(os.getcwd(),"VESPER_CUDA")
+    vesper_script = os.path.join(vesper_script,"main.py")
+    command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
+                                 "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s >%s"\
+                                 %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,
+                                 params['vesper']['simu_cutoff'],kernel_size,
+                                   voxel_spacing,angle_spacing,
+                                   params['vesper']['num_models'],params['vesper']['rank_mode'],output_dir,
+                                   input_pdb_path,backbone_pdb,ldp_pdb_path,output_pdb_path
+                                   )
+    os.system(command_line)
+    new_score_dict={}
+    pdb_dir=os.path.join(output_dir,"PDB")
+    read_score(new_score_dict,pdb_dir,output_pdb_path)#score sorted inside the func
+    write_pickle(new_score_dict,score_path)
+    return new_score_dict

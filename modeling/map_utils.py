@@ -73,3 +73,4 @@ def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,cutoff=2):
           "Ratio:%.2f"%(count_masked,count_meaningful,count_masked/count_meaningful))
     map_data[output_atom_label!=0]=0
     save_label_map(input_map_path,output_map_path,map_data)
+
