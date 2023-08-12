@@ -97,7 +97,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
 
 def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,params,global_mode=0):
     mkdir(output_dir)
-    functToDeleteItems(output_dir)
+    #functToDeleteItems(output_dir)
     #generate backbone from pdb
     backbone_pdb = os.path.join(output_dir,"backbone.pdb")
     filter_backbone(input_pdb_path,backbone_pdb)
@@ -117,6 +117,7 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
     score_path = os.path.join(output_dir,"score.pkl")
     vesper_script = os.path.join(os.getcwd(),"VESPER_CUDA")
     vesper_script = os.path.join(vesper_script,"main.py")
+    functToDeleteItems(os.path.join(output_dir,"PDB"))
     command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
                                  "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s -c %d >%s"\
                                  %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,

@@ -76,10 +76,10 @@ def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,cutoff=2,kee
     distance_array, output_atom_label = \
                 assign_label_special(map_data, mapc, mapr, maps, origin,nxstart,nystart,nzstart,  pdb_info_dict)
     map_data = np.array(map_data)
-    count_meaningful = len(map_data[map_data!=0])
-    count_masked = len(output_atom_label[output_atom_label!=0])
-    print("mask %d grid points out of %d meaningful grid points. "
-          "Ratio:%.2f"%(count_masked,count_meaningful,count_masked/count_meaningful))
+    # count_meaningful = len(map_data[map_data!=0])
+    # count_masked = len(output_atom_label[output_atom_label!=0])
+    # print("mask %d grid points out of %d meaningful grid points. "
+    #       "Ratio:%.2f"%(count_masked,count_meaningful,count_masked/count_meaningful))
     if keep_label:
         #unassigned region all set to 0, only focused on the labeled region
         map_data[output_atom_label==0]=0

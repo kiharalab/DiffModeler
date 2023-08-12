@@ -63,7 +63,8 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     mkdir(current_output_dir)
     print("score %.2f: local refinment!"%(current_score))
     segment_map_path = os.path.join(current_output_dir,"segment_map.mrc")
-    mask_map_by_pdb(diff_trace_map,segment_map_path,current_fitpdb_path,cutoff=params['assembling']['mask_cutoff'],keep_label=True)
+    mask_map_by_pdb(diff_trace_map,segment_map_path,current_fitpdb_path,
+                    cutoff=params['assembling']['mask_cutoff'],keep_label=True)
 
     # we skipped chimera local release in open code to remove the dependency to chimera
     final_pdb_output = os.path.join(current_output_dir,"final.pdb")
