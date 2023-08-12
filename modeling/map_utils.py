@@ -31,8 +31,8 @@ def assign_label_special(map_data, mapc, mapr, maps, origin ,nxstart,nystart,nzs
         for k in range(3):
             output_coord.append(current_coord[k]-origin[k])
         new_x, new_y, new_z = permute_pdb_coord_to_map(output_coord,mapc,mapr,maps)
-        print("input x %.4f, y %.4f, z %.4f"%(output_coord[0],output_coord[1],output_coord[2]))
-        print("output x %.4f, y %.4f, z %.4f"%(new_x, new_y, new_z))
+        #print("input x %.4f, y %.4f, z %.4f"%(output_coord[0],output_coord[1],output_coord[2]))
+        #print("output x %.4f, y %.4f, z %.4f"%(new_x, new_y, new_z))
         check_radius = int(np.ceil(current_radius))
         int_x, int_y,int_z = int(new_x),int(new_y),int(new_z)
         square_limit = current_radius ** 2
