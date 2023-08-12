@@ -19,7 +19,7 @@ def execCmd(cmd):
 def functToDeleteItems(fullPathToDir):
    for itemsInDir in os.listdir(fullPathToDir):
         if os.path.isdir(os.path.join(fullPathToDir, itemsInDir)):
-            functToDeleteItems(os.path.isdir(os.path.join(fullPathToDir, itemsInDir)))
+            functToDeleteItems(os.path.join(fullPathToDir, itemsInDir))
         else:
             os.remove(os.path.join(fullPathToDir,itemsInDir))
 import gzip
