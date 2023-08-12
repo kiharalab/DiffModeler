@@ -60,8 +60,8 @@
     },
     "assembling": {
       "score_cutoff": 0.2,
-      "score_min_cutoff": 50,
-      "score_max_cutoff": 60,
+      "score_min_cutoff": 0.50,
+      "score_max_cutoff": 0.60,
       "mask_cutoff": 20,
       "clash_distance": 3,
         "overlap_ratio_limit": 0.05
