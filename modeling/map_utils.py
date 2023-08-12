@@ -57,7 +57,16 @@ def assign_label_special(map_data, mapc, mapr, maps, origin ,nxstart,nystart,nzs
             print("Calcu finished %d/%d"%(count_check,len(cif_info_dict)))
     return distance_array,output_atom_label
 
-def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,cutoff=2):
+def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,cutoff=2,keep_label=False):
+    """
+
+    :param input_map_path:
+    :param output_map_path:
+    :param final_pdb_output:
+    :param cutoff:
+    :param keep_label: keep labeled region, or keep unlabeled region.
+    :return:
+    """
     output_dir = os.path.split(output_map_path)[0]
     pdb_info_dict = read_proteinpdb_data(final_pdb_output,run_type=1,atom_cutoff=cutoff)
     pdb_info_path = os.path.join(output_dir,"maskprotein_info_%d.pkl"%cutoff)
@@ -71,6 +80,10 @@ def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,cutoff=2):
     count_masked = len(output_atom_label[output_atom_label!=0])
     print("mask %d grid points out of %d meaningful grid points. "
           "Ratio:%.2f"%(count_masked,count_meaningful,count_masked/count_meaningful))
-    map_data[output_atom_label!=0]=0
+    if keep_label:
+        #unassigned region all set to 0, only focused on the labeled region
+        map_data[output_atom_label==0]=0
+    else:
+        map_data[output_atom_label!=0]=0
     save_label_map(input_map_path,output_map_path,map_data)
 

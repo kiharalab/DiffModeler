@@ -63,7 +63,7 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     mkdir(current_output_dir)
     print("score %.2f: local refinment!"%(current_score))
     segment_map_path = os.path.join(current_output_dir,"segment_map.mrc")
-    mask_map_by_pdb(diff_trace_map,segment_map_path,current_fitpdb_path,cutoff=params['assembling']['mask_cutoff'])
+    mask_map_by_pdb(diff_trace_map,segment_map_path,current_fitpdb_path,cutoff=params['assembling']['mask_cutoff'],keep_label=True)
 
     # we skipped chimera local release in open code to remove the dependency to chimera
     final_pdb_output = os.path.join(current_output_dir,"final.pdb")
@@ -88,9 +88,9 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
 
     #mask map and map ldp according to fitted structure.
     diff_traced_map_new = os.path.join(current_output_dir,"iterative_%s.mrc"%current_assign_chain)
-    mask_map_by_pdb(diff_trace_map,diff_traced_map_new,final_pdb_output)
+    mask_map_by_pdb(diff_trace_map,diff_traced_map_new,final_pdb_output,keep_label=False)
     diff_ldpmap_path_new = os.path.join(current_output_dir,"iterativeLDP_%s.mrc"%current_assign_chain)
-    mask_map_by_pdb(diff_ldpmap_path,diff_ldpmap_path_new,final_pdb_output)
+    mask_map_by_pdb(diff_ldpmap_path,diff_ldpmap_path_new,final_pdb_output,keep_label=False)
     clash_distance= params['assembling']['clash_distance']
     ratio_cutoff = params['assembling']['overlap_ratio_limit']
     score_dict = remove_overlap_pdb(score_dict,final_pdb_output,clash_distance,ratio_cutoff)
