@@ -4,8 +4,9 @@ from ops.io_utils import write_pickle,load_pickle
 from modeling.score_utils import build_score_pool,filter_score_dict,add_structure_size_score
 from modeling.pdb_utils import collect_final_pdb
 from modeling.iterative_fitting import iterative_fitting
-
+from ops.os_operation import mkdir
 def  assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params):
+    mkdir(modeling_dir)
     #first obtain the ldp path
     bandwidth = 2
     output_pdb_dir = os.path.join(fitting_dir,"LDP_%s"%(bandwidth))
