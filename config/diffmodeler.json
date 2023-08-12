@@ -55,7 +55,8 @@
       "voxel_spacing": 2,
       "angle_spacing": 10,
       "num_models": 100,
-      "rank_mode": "C"
+      "rank_mode": "C",
+      "thread": 6
     },
     "assembling": {
       "score_cutoff": 0.2,

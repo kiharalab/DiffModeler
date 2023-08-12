@@ -54,12 +54,12 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
                     mkdir(cur_fit_experiment_path)
                     output_path = os.path.join(cur_fit_dir,"vesper_simu_output_%d.out"%k)
                     command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
-                                 "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s >%s"\
+                                 "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s -c %d >%s"\
                                  %(vesper_script,fit_target_map,params['vesper']['ldp_cutoff'],gen_reso_map_path,
                                  params['vesper']['simu_cutoff'],params['vesper']['kernel_size'],
                                    params['vesper']['voxel_spacing'],params['vesper']['angle_spacing'],
                                    params['vesper']['num_models'],params['vesper']['rank_mode'],cur_fit_experiment_path,
-                                   pdb_path,backbone_pdb,verify_pdb_path,output_path
+                                   pdb_path,backbone_pdb,verify_pdb_path,params['vesper']['thread'],output_path
                                    )
                     os.system(command_line)
                     pdb_dir=os.path.join(cur_fit_experiment_path,"PDB")
@@ -115,12 +115,12 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
     vesper_script = os.path.join(os.getcwd(),"VESPER_CUDA")
     vesper_script = os.path.join(vesper_script,"main.py")
     command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
-                                 "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s >%s"\
+                                 "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s -c %d >%s"\
                                  %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,
                                  params['vesper']['simu_cutoff'],kernel_size,
                                    voxel_spacing,angle_spacing,
                                    params['vesper']['num_models'],params['vesper']['rank_mode'],output_dir,
-                                   input_pdb_path,backbone_pdb,ldp_pdb_path,output_pdb_path
+                                   input_pdb_path,backbone_pdb,ldp_pdb_path,params['vesper']['thread'],output_pdb_path
                                    )
     os.system(command_line)
     new_score_dict={}
