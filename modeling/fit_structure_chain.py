@@ -117,7 +117,8 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
     score_path = os.path.join(output_dir,"score.pkl")
     vesper_script = os.path.join(os.getcwd(),"VESPER_CUDA")
     vesper_script = os.path.join(vesper_script,"main.py")
-    functToDeleteItems(os.path.join(output_dir,"PDB"))
+    if os.path.exists(os.path.join(output_dir,"PDB")):
+        functToDeleteItems(os.path.join(output_dir,"PDB"))
     command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
                                  "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s -c %d >%s"\
                                  %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,
