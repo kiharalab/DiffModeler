@@ -42,7 +42,7 @@ def  assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,par
             chain_visit_dict[current_chain]=0
     iterative_fitting(diff_trace_map,diff_ldpmap_path,
                   modeling_dir,overall_score_dict,fitting_dict,
-                  map_ldp_pdb_path,chain_visit_dict,chain_length_score)
+                  map_ldp_pdb_path,chain_visit_dict,chain_length_score,params)
 
     final_path=collect_final_pdb(modeling_dir,chain_visit_dict)
     return final_path
