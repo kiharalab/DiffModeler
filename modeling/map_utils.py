@@ -57,7 +57,7 @@ def assign_label_special(map_data, mapc, mapr, maps, origin ,nxstart,nystart,nzs
             print("Calcu finished %d/%d"%(count_check,len(cif_info_dict)))
     return distance_array,output_atom_label
 
-def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,cutoff=2,keep_label=False):
+def mask_map_by_pdb_slow(input_map_path,output_map_path,final_pdb_output,cutoff=2,keep_label=False):
     """
 
     :param input_map_path:
@@ -86,4 +86,37 @@ def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,cutoff=2,kee
     else:
         map_data[output_atom_label!=0]=0
     save_label_map(input_map_path,output_map_path,map_data)
+from TEMPy import *
+from TEMPy.protein.structure_parser import *
+from TEMPy.protein.structure_blurrer import *
+from TEMPy.protein.scoring_functions import *
+from TEMPy.maps.map_parser import *
+def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,keep_label=False):
+    """
+
+    :param input_map_path:
+    :param output_map_path:
+    :param final_pdb_output:
+    :param cutoff:
+    :param keep_label: keep labeled region, or keep unlabeled region.
+    :return:
+    """
+    #first use pdb to blue simulated map
+    if keep_label:
+        resolution =10#includes bigger map as possible
+    else:
+        resolution = 2
+    sb = StructureBlurrer()
+    pdb1 = PDBParser.read_PDB_file('PDB1',final_pdb_output)
+    map1 = MapParser.readMRC(input_map_path)
+    sim_map = sb.gaussian_blur_real_space(prot=pdb1,densMap=map1,resolution=resolution)
+    bin_map1 = map1.fullMap
+    bin_map2 = sim_map.fullMap
+    if keep_label:
+        mask = bin_map2>=0.01
+    else:
+        mask = bin_map2<0.001
+    bin_map1 = bin_map1*mask
+    map1.fullMap = bin_map1
+    map1.write_to_MRC_file(output_map_path)
 
