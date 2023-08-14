@@ -91,7 +91,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
             for k,fit_target_map in enumerate(fit_target_map_list):
                 diff_map_path_new = os.path.join(cur_fit_dir,"iterative_%d.mrc"%k)
                 if not os.path.exists(diff_map_path_new):
-                    mask_map_by_pdb(fit_target_map,diff_map_path_new,top_fitpdb_path,cutoff=2)
+                    mask_map_by_pdb(fit_target_map,diff_map_path_new,top_fitpdb_path,keep_label=False)
                 new_fit_target_map_list.append(diff_map_path_new)
             fit_target_map_list = new_fit_target_map_list
 
