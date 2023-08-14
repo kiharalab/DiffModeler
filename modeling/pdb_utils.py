@@ -59,11 +59,12 @@ def extract_residue_locations(pdb_file):
     return np.array(residue_locations)
 
 
-def find_identical_chain(fit_dict,query_chain):
+def find_identical_chain(fit_dict,query_chain,visit_dict):
     for key in fit_dict:
         current_chain_list=fit_dict[key]
         if query_chain in current_chain_list:
-            return current_chain_list
+            new_list = [chain_name for chain_name in current_chain_list if visit_dict[chain_name]==0]
+            return new_list
     return None
 
 def clean_fit_dict(fit_dict,query_chain):

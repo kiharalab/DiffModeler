@@ -20,7 +20,7 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
         current_score = score_dict[search_key]
         if chain_visit_dict[current_chain]==1:
             #if the top scored chain have been fitted, check if it has identical chains that has not been fitted
-            current_chain_list = find_identical_chain(fitting_dict,current_chain)
+            current_chain_list = find_identical_chain(fitting_dict,current_chain,chain_visit_dict)
             if current_chain_list is None or len(current_chain_list)==0:
                 #no need to consider this fit since it has no identical chains and it has been fitted
                 clean_score_dict(score_dict,current_chain)
@@ -109,7 +109,14 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
 
     finalnew_pdb_path = os.path.join(current_output_dir,"final_rechain.cif")
     rename_chains_cif(final_pdb_output,current_assign_chain,finalnew_pdb_path)
+
+
+
     if len(chain_remains)>0:
         iterative_fitting(diff_traced_map_new,diff_ldpmap_path_new,
-                  modeling_dir,score_dict,fitting_dict.
+                  modeling_dir,score_dict,fitting_dict,
                   map_ldp_pdb_path,chain_visit_dict,chain_length_score,params)
+
+
+
+
