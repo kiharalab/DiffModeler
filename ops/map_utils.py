@@ -300,5 +300,5 @@ def SimuMap1A(input_path,save_path):
     #tempy based simulated map generation to save time
     sb = StructureBlurrer()
     pdb1 = PDBParser.read_PDB_file('PDB1',input_path)
-    sim_map = sb.gaussian_blur(prot=pdb1,resolution=1)
+    sim_map = sb.gaussian_blur_real_space(prot=pdb1,resolution=1)
     sim_map.write_to_MRC_file(save_path)
