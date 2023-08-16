@@ -25,7 +25,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
 
     for pdb_path in fitting_dict:
         chain_list = fitting_dict[pdb_path]
-        assert len(chain_list)>1
+        assert len(chain_list)>=1
         tmp_chain = chain_list[0]
         backbone_pdb = os.path.join(fitting_dir,"backbone_%s.pdb"%tmp_chain)
         filter_backbone(pdb_path,backbone_pdb)
