@@ -25,7 +25,7 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
                 #no need to consider this fit since it has no identical chains and it has been fitted
                 clean_score_dict(score_dict,current_chain)
                 iterative_fitting(diff_trace_map,diff_ldpmap_path,
-                  modeling_dir,score_dict,fitting_dict.
+                  modeling_dir,score_dict,fitting_dict,
                   map_ldp_pdb_path,chain_visit_dict,chain_length_score,params)
                 return
             current_assign_chain = current_chain_list[0]#use its identical chains to assign chain name
