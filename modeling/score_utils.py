@@ -59,7 +59,7 @@ def read_score(new_score_dict,pdb_dir,output_path):
     for kk in range(len(list_score)):
         pdb_path = os.path.join(pdb_dir,"#%d.pdb"%kk)
         score= list_score[kk]
-        new_score_dict[pdb_path]=score
+        new_score_dict[pdb_path]=score*100
     new_score_dict=sort_dict_by_value_desc(new_score_dict)
     return new_score_dict
 
