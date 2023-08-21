@@ -119,13 +119,24 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
     vesper_script = os.path.join(vesper_script,"main.py")
     if os.path.exists(os.path.join(output_dir,"PDB")):
         functToDeleteItems(os.path.join(output_dir,"PDB"))
-    command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
+    if global_mode:
+        command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
                                  "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s -c %d >%s"\
                                  %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,
                                  params['vesper']['simu_cutoff'],kernel_size,
                                    voxel_spacing,angle_spacing,
                                    params['vesper']['num_models'],params['vesper']['rank_mode'],output_dir,
                                    input_pdb_path,backbone_pdb,ldp_pdb_path,params['vesper']['thread'],output_pdb_path
+                                   )
+    else:
+        command_line="python3 %s orig -a %s -t %f -b %s -T %f -g %f -s %f " \
+                                 "-A %f -N %d -M %s -gpu 0 -o %s -pdbin %s -ca %s -ldp %s -c %d -al %f >%s"\
+                                 %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,
+                                 params['vesper']['simu_cutoff'],kernel_size,
+                                   voxel_spacing,angle_spacing,
+                                   params['vesper']['num_models'],params['vesper']['rank_mode'],output_dir,
+                                   input_pdb_path,backbone_pdb,ldp_pdb_path,params['vesper']['thread'],
+                                   params['vesper']['local_angle_range'],output_pdb_path
                                    )
     os.system(command_line)
     new_score_dict={}

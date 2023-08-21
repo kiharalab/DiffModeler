@@ -3,7 +3,7 @@ from ops.os_operation import mkdir
 from modeling.score_utils import sort_dict_by_value_desc,clean_score_dict,find_biggest_unvisited_chain
 from modeling.pdb_utils import find_identical_chain,find_chain_pdb_path,remove_overlap_pdb,rename_chains_cif
 from modeling.fit_structure_chain import fit_single_chain
-from modeling.map_utils import mask_map_by_pdb
+from modeling.map_utils import mask_map_by_pdb,segment_map
 from modeling.pdb_utils import extract_residue_locations
 import shutil
 from ops.io_utils import write_pickle
@@ -62,8 +62,10 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     current_output_dir = os.path.join(modeling_dir,"iterative_%s"%current_assign_chain)
     mkdir(current_output_dir)
     print("score %.2f: local refinment!"%(current_score))
-    segment_map_path = os.path.join(current_output_dir,"segment_map.mrc")
-    mask_map_by_pdb(diff_trace_map,segment_map_path,current_fitpdb_path,keep_label=True)
+    segment_map_path0 = os.path.join(current_output_dir,"segment_map.mrc")
+    mask_map_by_pdb(diff_trace_map,segment_map_path0,current_fitpdb_path,keep_label=True)
+    segment_map_path = os.path.join(current_output_dir,"segment_map_small.mrc")
+    segment_map(segment_map_path0,segment_map_path)
 
     # we skipped chimera local release in open code to remove the dependency to chimera
     final_pdb_output = os.path.join(current_output_dir,"final.pdb")
