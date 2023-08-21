@@ -154,7 +154,8 @@ def segment_map(input_map,output_map,contour=0):
         maps = mrc.header.maps
         new_data = input_data[min_x:max_x,min_y:max_y,min_z:max_z]
         shift_start = permute_ns_coord_to_pdb([min_x,min_y,min_z],mapc,mapr,maps)
-        origin = np.array(orig)+np.array(shift_start)
+        origin = np.array(mrc.header.origin.tolist(), dtype=np.float32)
+        origin = np.array(origin)+np.array(shift_start)
         mrc_new = mrcfile.new(output_map, data=new_data, overwrite=True)
         vsize = mrc_new.voxel_size
         vsize.flags.writeable = True
@@ -163,19 +164,23 @@ def segment_map(input_map,output_map,contour=0):
         vsize.z = 1.0
         mrc_new.voxel_size = vsize
         mrc_new.update_header_from_data()
-        mrc_new.header.nx = nx
-        mrc_new.header.ny = ny
-        mrc_new.header.nz = nz
+        mrc_new.header.nx = int(max_x-min_x)
+        mrc_new.header.ny = int(max_y-min_y)
+        mrc_new.header.nz = int(max_z-min_z)
         mrc_new.header.nxstart = nxs * prev_voxel_size_x
         mrc_new.header.nystart = nys * prev_voxel_size_y
         mrc_new.header.nzstart = nzs * prev_voxel_size_z
-        mrc_new.header.mx = mx
-        mrc_new.header.my = my
-        mrc_new.header.mz = mz
+        mrc_new.header.mx = int(max_x-min_x)
+        mrc_new.header.my = int(max_y-min_y)
+        mrc_new.header.mz = int(max_z-min_z)
         mrc_new.header.mapc = mrc.header.mapc
         mrc_new.header.mapr = mrc.header.mapr
         mrc_new.header.maps = mrc.header.maps
-        mrc_new.header.origin = origin
+        mrc_new.header.cella.x = int(max_x-min_x)
+        mrc_new.header.cella.y = int(max_y-min_y)
+        mrc_new.header.cella.z = int(max_z-min_z)
+        #mrc_new.header.origin = origin
+        (mrc_new.header.origin.x, mrc_new.header.origin.y, mrc_new.header.origin.z) = origin
         mrc_new.update_header_stats()
         mrc.print_header()
         mrc_new.print_header()
