@@ -6,7 +6,7 @@ from ops.map_utils import SimuMap1A
 import shutil
 from ops.io_utils import load_pickle,write_pickle
 from modeling.score_utils import read_score
-from modeling.map_utils import mask_map_by_pdb
+from modeling.map_utils import mask_map_by_pdb,format_map
 
 
 def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
@@ -91,7 +91,9 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
             for k,fit_target_map in enumerate(fit_target_map_list):
                 diff_map_path_new = os.path.join(cur_fit_dir,"iterative_%d.mrc"%k)
                 if not os.path.exists(diff_map_path_new):
-                    mask_map_by_pdb(fit_target_map,diff_map_path_new,top_fitpdb_path,keep_label=False)
+                    diff_map_path_tmp = os.path.join(cur_fit_dir,"iterative_%d_tmp.mrc"%k)
+                    mask_map_by_pdb(fit_target_map,diff_map_path_tmp,top_fitpdb_path,keep_label=False)
+                    format_map(diff_map_path_tmp,diff_map_path_new)
                 new_fit_target_map_list.append(diff_map_path_new)
             fit_target_map_list = new_fit_target_map_list
 
