@@ -186,3 +186,51 @@ def segment_map(input_map,output_map,contour=0):
         mrc_new.print_header()
         mrc_new.close()
 
+def format_map(input_map,output_map):
+    """
+
+    :param input_map:
+    :param output_map:
+    :return:
+    generate a map with correct header, to fix the machine stamp error
+    """
+    with mrcfile.open(input_map, permissive=True) as mrc:
+        prev_voxel_size = mrc.voxel_size
+        prev_voxel_size_x = float(prev_voxel_size['x'])
+        prev_voxel_size_y = float(prev_voxel_size['y'])
+        prev_voxel_size_z = float(prev_voxel_size['z'])
+        nx, ny, nz, nxs, nys, nzs, mx, my, mz = \
+            mrc.header.nx, mrc.header.ny, mrc.header.nz, \
+            mrc.header.nxstart, mrc.header.nystart, mrc.header.nzstart, \
+            mrc.header.mx, mrc.header.my, mrc.header.mz
+        orig = mrc.header.origin
+        #check the useful density in the input
+
+        new_data = np.array(mrc.data)
+
+        mrc_new = mrcfile.new(output_map, data=new_data, overwrite=True)
+        vsize = mrc_new.voxel_size
+        vsize.flags.writeable = True
+        vsize.x = prev_voxel_size_x
+        vsize.y = prev_voxel_size_y
+        vsize.z = prev_voxel_size_z
+        mrc_new.voxel_size = vsize
+        mrc_new.update_header_from_data()
+        mrc_new.header.nx = nx
+        mrc_new.header.ny = ny
+        mrc_new.header.nz = nz
+        mrc_new.header.nxstart = nxs
+        mrc_new.header.nystart = nys
+        mrc_new.header.nzstart = nzs
+        mrc_new.header.mx = mx
+        mrc_new.header.my = my
+        mrc_new.header.mz = mz
+        mrc_new.header.mapc = mrc.header.mapc
+        mrc_new.header.mapr = mrc.header.mapr
+        mrc_new.header.maps = mrc.header.maps
+
+        mrc_new.header.origin = orig
+        mrc_new.update_header_stats()
+        mrc.print_header()
+        mrc_new.print_header()
+        mrc_new.close()
