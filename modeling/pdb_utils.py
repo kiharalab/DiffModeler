@@ -119,12 +119,27 @@ def rename_chains_cif(pdb_file,  new_chain_id,cif_file):
 
     for line in pdb_lines:
         if line.startswith('ATOM') or line.startswith('HETATM'):
-            x=float(line[30:38])
-            y=float(line[38:46])
-            z=float(line[46:54])
-            line = line[:21] + new_chain_id + line[22:30]+" %.3f %.3f %.3f "%(x,y,z)+line[54:]
+            # x=float(line[30:38])
+            # y=float(line[38:46])
+            # z=float(line[46:54])
+            # line = line[:21] + new_chain_id + line[22:30]+" %.3f %.3f %.3f "%(x,y,z)+line[54:]
             atom_serial += 1
-            cif_lines.append(line)
+            new_line=""
+            new_line += line[:4]+"\t"
+            new_line += line[6:11]+"\t"
+            new_line += line[12:16]+"\t"
+            new_line += line[16]+"\t"
+            new_line += line[17:20]+"\t"
+            new_line += new_chain_id+"\t"
+            new_line += line[22:26]+"\t"
+            new_line += line[26]+"\t"
+            new_line += line[30:38]+"\t"
+            new_line += line[38:46]+"\t"
+            new_line += line[46:54]+"\t"
+            new_line += line[54:60]+"\t"
+            new_line += line[60:66]+"\t"
+            new_line += line[66:]#include \n
+            cif_lines.append(new_line)
 
         # if line.startswith('ENDMDL'):
         #     current_model += 1
