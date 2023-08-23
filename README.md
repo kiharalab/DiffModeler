@@ -1,5 +1,5 @@
 
-#DiffModeler
+# DiffModeler
 <a href="https://github.com/marktext/marktext/releases/latest">
    <img src="https://img.shields.io/badge/DiffModeler-v1.0.0-green">
    <img src="https://img.shields.io/badge/platform-Linux%20%7C%20Mac%20-green">
@@ -8,7 +8,7 @@
    <img src="https://img.shields.io/badge/licence-GNU-green">
 </a>  
 
-DiffModeler is a computational tool using diffusion model to automatically build full protein complex structure from cryo-EM maps at intermediate and low resolution.  
+DiffModeler is a computational tool using a diffusion model to automatically build full protein complex structure from cryo-EM maps at intermediate and low resolution.  
 
 Copyright (C) 2023 Xiao Wang, Han Zhu, Genki Terashi, Daisuke Kihara, and Purdue University. 
 
@@ -119,7 +119,7 @@ python3 main.py --mode=0 -F=example/6824.mrc -M=example/input_info.txt --config=
 ### Input File
 Cryo-EM map with mrc format. 
 AlphaFold/Template single-chain structure and information file to indicate the path.
-Our example input can be found [here]()
+Our example input can be found [here](https://github.com/kiharalab/DiffModeler/tree/master/example)
 
 ### Output File 
 DiffModeler.cif: a CIF file that records the final modeled protein complex structure.
