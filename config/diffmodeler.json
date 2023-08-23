@@ -57,7 +57,8 @@
       "num_models": 100,
       "rank_mode": "C",
       "thread": 6,
-      "local_angle_range": 20
+      "local_angle_range": 20,
+      "local_angle_spacing": 1
     },
     "assembling": {
       "score_cutoff": 0.2,

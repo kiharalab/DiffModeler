@@ -112,10 +112,10 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
 
     if global_mode==1:
         output_pdb_path = os.path.join(output_dir,"vesper_globalfit.out")
-        angle_spacing = 10
+        angle_spacing = params['vesper']['angle_spacing']
     else:
         output_pdb_path = os.path.join(output_dir,"vesper_localfit.out")
-        angle_spacing = 5
+        angle_spacing = params['vesper']['local_angle_spacing']
     score_path = os.path.join(output_dir,"score.pkl")
     vesper_script = os.path.join(os.getcwd(),"VESPER_CUDA")
     vesper_script = os.path.join(vesper_script,"main.py")
