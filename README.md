@@ -55,39 +55,36 @@ Chimera (for map visualization): https://www.cgl.ucsf.edu/chimera/download.html
 git clone git@github.com:kiharalab/DiffModeler.git && cd DiffModeler
 ```
 
-### 3. Build dependencies.   
-### 3.1 Install with anaconda
+### 3. Configure environment for DiffModeler.
+#### 3.1.1 Install anaconda
 Install anaconda from https://www.anaconda.com/download#downloads.
+#### 3.1.2 Install environment via yml file
 Then create the environment via
 ```commandline
 conda env create -f environment.yml
 ```
-
+#### 3.1.3 Activate environment for running
 Each time when you want to run this software, simply activate the environment by
 ```
 conda activate DiffModeler
 conda deactivate(If you want to exit) 
 ```
-#### 3.1 Install with pip and python.
-##### 3.1.1[`install pip`](https://pip.pypa.io/en/stable/installing/).
-##### 3.1.2  Install dependency in command line.
+
+### 4. Download the pre-trained diffusion model
+make a directory ``best_model`` and then download our pretrained model in this directory. <br>
+Low resolution (5-10A, can also be used for 10-20A): [low_resolution_model](https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_best.pth.tar) <br>
+High resolution model (0-5 A): [low_resolution_model](https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_highreso.pth.tar)
+
+You can also use command line to do this
+```commandline
+mkdir best_model
+cd best_model
+wget https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_best.pth.tar
+wget https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_highreso.pth.tar
+cd ..
 ```
-pip3 install -r requirements.txt --user
-```
-If you encounter any errors, you can install each library one by one:
-```
-pip3 install biopython
-pip3 install numpy
-pip3 install numba
-pip3 install scipy
-pip3 install mrcfile
-pip3 install torch==1.9.0
-pip3 install tqdm
-pip3 install progress
-pip3 install scikit-learn
-pip3 install pyFFTW
-pip3 install BioTEMPy>=2.0.0
-```
+
+If the link failed, you can also download our model files via our [lab server](https://kiharalab.org/emsuites/diffmodeler_model/) to ``best_model`` directory. 
 
 ## Usage
 ```commandline
@@ -95,25 +92,45 @@ usage: main.py [-h] --mode MODE [-F F] [-M M] [--config CONFIG] [--gpu GPU] [--o
                [--contour CONTOUR]
 
 options:
-  -h, --help         show this help message and exit
-  --mode MODE        control mode
-  -F F               input map path
-  -M M               txt file path which records protein information
-  --config CONFIG    specifying the config path
-  --gpu GPU          specify the gpu we will use
-  --output OUTPUT    Output directory
-  --contour CONTOUR  Contour level for input map, suggested 0.5*[author_contour]. (Float),
-                     Default value: 0.0
+  -h, --help            show this help message and exit
+  --mode MODE           control mode
+  -F F                  input map path
+  -P P                  directory or zipped file of Single-Chain PDB files
+  -M M                  txt file path which records protein information
+  --resolution RESOLUTION
+                        specify the resolution to use different model
+  --config CONFIG       specifying the config path
+  --gpu GPU             specify the gpu we will use
+  --output OUTPUT       Output directory
+  --contour CONTOUR     Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0
 ```
 ### 1. Protein Structure Complex Modeling
 ```commandline
-python3 main.py --mode=0 -F=[Map_Path] -M=[protin_config_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID]
+python3 main.py --mode=0 -F=[Map_Path] -P=[Single_chain_structure_dir] -M=[protin_config_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
-[Map_Path] is the path of the input experimental cryo-EM map, [protin_config_path] is the text file path that records the protein single chain path, [pipeline_config_file] is the pipeline's parameter configuration file, saved in config directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference.
+[Map_Path] is the path of the input experimental cryo-EM map, [Single_chain_structure_dir] specifis the directory of all single-chain PDB files. You can also zip them into a zip/.tar/.tar.gz file here to pass the zip file path here. [protin_config_path] is the text file path that records the protein single chain PDB name and corressponding chains, [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-5A will use high resolution diffusion model, while all other resolution ranges will use the default diffusion model. Therefore, you can use an approxiemate resolution value here.
+
+Example of PDB config file
+```commandline
+tmp1.pdb A B
+tmp2.pdb C
+tmp3.pdb D E
+```
+which indicates 5 single-chain structures are provided. tmp1.pdb is for identical chain A and B, tmp2.pdb is for chain C, tmp3.pdb is for identical chain D and chain E.
+To obtain such template/alphafold predicted single-chain structure, please consider two options:
+
+1. Please check <a href='https://alphafold.ebi.ac.uk/'>AlphaFold Database</a> for single-chain structure with UniProt ID.
+2. Please simpy search <a href='https://www.ebi.ac.uk/Tools/sss/fasta/'>EBI Search Tool</a> aginst structure database to find most similar structures as templates for us to model protein complex. Here you can get similar (or even identical) experimental single-chain structures or AlphaFold predicted structures.
 
 ### Example Command
 ```commandline
-python3 main.py --mode=0 -F=example/6824.mrc -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0
+python3 main.py --mode=0 -F=6824.mrc -P=example -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
+```
+This is the example command with ``-P`` specify the directory of single-chain pdbs.
+
+You can also use this command line to specify the zip file including all single-chain PDB files for ``-P``
+```commandline
+python3 main.py --mode=0 -F=6824.mrc -P=example/6824.zip -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
 ## Example
 ### Input File
@@ -123,4 +140,7 @@ Our example input can be found [here](https://github.com/kiharalab/DiffModeler/t
 
 ### Output File 
 DiffModeler.cif: a CIF file that records the final modeled protein complex structure.
-Our example output can be found [here](). All the intermediate results are also kept here. 
+Our example output can be found [here](https://kiharalab.org/emsuites/diffmodelder_example/output). All the intermediate results are also kept here. 
+
+## Benchmark Dataset
+All input and output of the benchmarked datasets are maintained [here](https://kiharalab.org/emsuites/diffmodelder_benchmark)
