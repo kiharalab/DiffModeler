@@ -19,11 +19,17 @@ if __name__ == "__main__":
     params = argparser()
 
     if params['mode']==0:
+        if params['resolution']>20:
+            print("maps with %.2f resolution is not supported! We only support maps with resolution 0-20A!"%params['resolution'])
+            exit()
+        if params['resolution']<5:
+            params['model']['path']="best_model/diffusion_highreso.pth.tar"
+            print("switch to high resolution diffusion model %s"%params['model']['path'])
         gpu_id = params['gpu']
         if gpu_id is not None:
             os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
         cur_map_path = os.path.abspath(params['F'])
-        if ".gz"==cur_map_path[-3:]:
+        if cur_map_path.endswith(".gz"):
             from ops.os_operation import unzip_gz
             cur_map_path = unzip_gz(cur_map_path)
 
@@ -43,8 +49,18 @@ if __name__ == "__main__":
         diff_trace_map=infer_diffem(cur_map_path,diffusion_dir,params)
         print("Diffusion process finished! Traced map saved here %s"%diff_trace_map)
         #first build a dict from the input text configure file
+        single_chain_pdb_input = os.path.abspath(params['P'])
+
+        if not os.path.isdir(single_chain_pdb_input):
+            single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
+            from ops.os_operation import extract_compressed_file
+            extract_compressed_file(single_chain_pdb_input,single_chain_pdb_dir)
+
+        else:
+            from ops.os_operation import copy_directory
+            single_chain_pdb_dir = copy_directory(single_chain_pdb_input,os.path.join(save_path,"single_chain_pdb"))
         from ops.io_utils import read_structure_txt
-        fitting_dict = read_structure_txt(os.path.abspath(params['M']))
+        fitting_dict = read_structure_txt(single_chain_pdb_dir,os.path.abspath(params['M']))
 
         #VESPER singl-chain fitting process
         fitting_dir = os.path.join(save_path,"structure_modeling")

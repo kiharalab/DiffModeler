@@ -9,7 +9,9 @@ def argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode',type=int,required=True,help='control mode')
     parser.add_argument('-F',type=str, help='input map path')#File path for decoy dir
+    parser.add_argument("-P",type=str,help="directory or zipped file of Single-Chain PDB files")
     parser.add_argument("-M",type=str,help="txt file path which records protein information")
+    parser.add_argument("--resolution",type=str,help="specify the resolution to use different model")
     parser.add_argument("--config",type=str,default=None,help="specifying the config path")
     parser.add_argument("--gpu",type=str,default=None,help="specify the gpu we will use")
     parser.add_argument("--output",type=str,help="Output directory")
