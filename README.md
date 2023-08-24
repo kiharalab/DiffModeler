@@ -8,7 +8,7 @@
    <img src="https://img.shields.io/badge/licence-GNU-green">
 </a>  
 
-DiffModeler is a computational tool using a diffusion model to automatically build full protein complex structure from cryo-EM maps at intermediate and low resolution.  
+DiffModeler is a computational tool using a diffusion model to automatically build full protein complex structure from cryo-EM maps at 0-20A resolution.  
 
 Copyright (C) 2023 Xiao Wang, Han Zhu, Genki Terashi, Daisuke Kihara, and Purdue University. 
 
@@ -72,15 +72,13 @@ conda deactivate(If you want to exit)
 
 ### 4. Download the pre-trained diffusion model
 make a directory ``best_model`` and then download our pretrained model in this directory. <br>
-Low resolution (5-10A, can also be used for 10-20A): [low_resolution_model](https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_best.pth.tar) <br>
-High resolution model (0-5 A): [low_resolution_model](https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_highreso.pth.tar)
+Diffusion model weights (trained on 5-10A, can be used for 2-5A (very good backbone tracing) and 10-20A): [diffusion_model](https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_best.pth.tar) <br>
 
 You can also use command line to do this
 ```commandline
 mkdir best_model
 cd best_model
 wget https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_best.pth.tar
-wget https://huggingface.co/zhtronics/DiffModelerWeight/resolve/main/diffusion_highreso.pth.tar
 cd ..
 ```
 
@@ -98,7 +96,7 @@ options:
   -P P                  directory or zipped file of Single-Chain PDB files
   -M M                  txt file path which records protein information
   --resolution RESOLUTION
-                        specify the resolution to use different model
+                        specify the resolution to skip diffusion for super high resolution maps (better than 2A)
   --config CONFIG       specifying the config path
   --gpu GPU             specify the gpu we will use
   --output OUTPUT       Output directory
@@ -108,7 +106,7 @@ options:
 ```commandline
 python3 main.py --mode=0 -F=[Map_Path] -P=[Single_chain_structure_dir] -M=[protin_config_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
-[Map_Path] is the path of the input experimental cryo-EM map, [Single_chain_structure_dir] specifis the directory of all single-chain PDB files. You can also zip them into a zip/.tar/.tar.gz file here to pass the zip file path here. [protin_config_path] is the text file path that records the protein single chain PDB name and corressponding chains, [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-5A will use high resolution diffusion model, while all other resolution ranges will use the default diffusion model. Therefore, you can use an approxiemate resolution value here.
+[Map_Path] is the path of the input experimental cryo-EM map, [Single_chain_structure_dir] specifis the directory of all single-chain PDB files. You can also zip them into a zip/.tar/.tar.gz file here to pass the zip file path here. [protin_config_path] is the text file path that records the protein single chain PDB name and corressponding chains, [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
 
 Example of PDB config file
 ```commandline
@@ -124,13 +122,13 @@ To obtain such template/alphafold predicted single-chain structure, please consi
 
 ### Example Command
 ```commandline
-python3 main.py --mode=0 -F=6824.mrc -P=example -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
+python3 main.py --mode=0 -F=example/6824.mrc -P=example -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
 This is the example command with ``-P`` specify the directory of single-chain pdbs.
 
 You can also use this command line to specify the zip file including all single-chain PDB files for ``-P``
 ```commandline
-python3 main.py --mode=0 -F=6824.mrc -P=example/6824.zip -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
+python3 main.py --mode=0 -F=example/6824.mrc -P=example/6824.zip -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
 ## Example
 ### Input File

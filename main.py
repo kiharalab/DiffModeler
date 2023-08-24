@@ -22,9 +22,6 @@ if __name__ == "__main__":
         if params['resolution']>20:
             print("maps with %.2f resolution is not supported! We only support maps with resolution 0-20A!"%params['resolution'])
             exit()
-        if params['resolution']<5:
-            params['model']['path']="best_model/diffusion_highreso.pth.tar"
-            print("switch to high resolution diffusion model %s"%params['model']['path'])
         gpu_id = params['gpu']
         if gpu_id is not None:
             os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
@@ -44,9 +41,13 @@ if __name__ == "__main__":
         from data_processing.Resize_Map import Resize_Map
         cur_map_path = Resize_Map(cur_map_path,os.path.join(save_path,map_name+".mrc"))
         #diffusion inference
-        from predict.infer_diffusion import infer_diffem
-        diffusion_dir = os.path.join(save_path,"infer_diffusion")
-        diff_trace_map=infer_diffem(cur_map_path,diffusion_dir,params)
+        if params['resolution']>=2:
+            from predict.infer_diffusion import infer_diffem
+            diffusion_dir = os.path.join(save_path,"infer_diffusion")
+            diff_trace_map=infer_diffem(cur_map_path,diffusion_dir,params)
+        else:
+            print("skip diffusion with very high resolution map %f"%params['resolution'])
+            diff_trace_map = cur_map_path
         print("Diffusion process finished! Traced map saved here %s"%diff_trace_map)
         #first build a dict from the input text configure file
         single_chain_pdb_input = os.path.abspath(params['P'])
