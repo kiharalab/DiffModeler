@@ -49,6 +49,10 @@ if __name__ == "__main__":
             print("skip diffusion with very high resolution map %f"%params['resolution'])
             diff_trace_map = cur_map_path
         print("Diffusion process finished! Traced map saved here %s"%diff_trace_map)
+        # segment this difftrace map to save time
+        from modeling.map_utils import segment_map
+        diff_new_trace_map = os.path.join(save_path,"diffusion.mrc")
+        segment_map(diff_trace_map,diff_new_trace_map,contour=0)
         #first build a dict from the input text configure file
         single_chain_pdb_input = os.path.abspath(params['P'])
 
