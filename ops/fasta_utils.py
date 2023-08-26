@@ -15,6 +15,7 @@ def read_fasta(input_fasta_path):
             if line[0]==">":
                 current_id = line.strip("\n")
                 current_id = current_id.replace(">","")
+                current_id = current_id.replace(" ","")
 
             else:
                 line=line.strip("\n").replace(" ","")
