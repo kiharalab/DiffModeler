@@ -18,6 +18,7 @@ def execCmd(cmd):
 
 def run_command(cmd):
     os.system(cmd)
+
 import shutil
 
 def copy_directory(source_dir, destination_dir):

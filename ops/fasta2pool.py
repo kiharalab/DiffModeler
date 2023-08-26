@@ -22,9 +22,9 @@ def fasta2pool(params,save_path):
         input_fasta_path = os.path.join(current_chain_dir,"input.fasta")
         use_chain_name = chain_name_list.split("-")[0]
         write_fasta(fasta_list,use_chain_name,input_fasta_path)
-        command_line="python %s --email %s --program fasta " \
+        command_line="cd %s; python %s --email %s --program fasta " \
                      "--stype protein --database pdb,afdb " \
-                     "--sequence %s"%(search_script,params['email'],input_fasta_path)
+                     "--sequence %s"%(current_chain_dir,search_script,params['email'],input_fasta_path)
         pool.apply_async(run_command,args=(command_line,))
     pool.close()
     pool.join()
@@ -42,9 +42,10 @@ def fasta2pool(params,save_path):
             print("fail to find search results for chain %s"%chain_name_list)
             print("-"*20+" search again "+"-"*20)
             input_fasta_path = os.path.join(current_chain_dir,"input.fasta")
-            command_line="python %s --email %s --program fasta " \
+            command_line="cd %s; python %s --email %s --program fasta " \
                      "--stype protein --database pdb,afdb " \
-                     "--sequence %s"%(search_script,params['email'],input_fasta_path)
+                     "--sequence %s"%(current_chain_dir,search_script,
+                                      params['email'],input_fasta_path)
             run_command(command_line)
         cur_file = os.path.join(current_chain_dir,listfiles[0])
         with open(cur_file,'r') as rfile:
