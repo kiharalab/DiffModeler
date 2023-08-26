@@ -32,6 +32,7 @@ def set_up_envrionment(params):
         save_path=params['output']
         map_name="input"
         mkdir(save_path)
+    save_path = os.path.abspath(save_path)
     from data_processing.Unify_Map import Unify_Map
     cur_map_path = Unify_Map(cur_map_path,os.path.join(save_path,map_name+"_unified.mrc"))
     from data_processing.Resize_Map import Resize_Map
