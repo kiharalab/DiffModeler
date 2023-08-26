@@ -280,7 +280,10 @@ def filter_chain_cif(input_cif,select_chain_name,output_cif):
         seq_ids = block_list.index('_atom_site.label_seq_id')
     except:
         seq_ids = block_list.index('_atom_site.auth_seq_id')
-    chain_ids = block_list.index("_atom_site.label_asym_id")
+    try:
+        chain_ids = block_list.index("_atom_site.auth_asym_id")
+    except:
+        chain_ids = block_list.index("_atom_site.label_asym_id")
     atom_id=1
     seq_id=1
     prev_seq_id=None
@@ -333,7 +336,10 @@ def cif2pdb(input_cif_path,final_pdb_path):
         seq_ids = block_list.index('_atom_site.label_seq_id')
     except:
         seq_ids = block_list.index('_atom_site.auth_seq_id')
-    chain_ids = block_list.index("_atom_site.label_asym_id")
+    try:
+        chain_ids = block_list.index("_atom_site.auth_asym_id")
+    except:
+        chain_ids = block_list.index("_atom_site.label_asym_id")
     atom_type_ids = block_list.index("_atom_site.label_atom_id")
     res_name_ids = block_list.index("_atom_site.label_comp_id")
     x_ids = block_list.index("_atom_site.Cartn_x")
