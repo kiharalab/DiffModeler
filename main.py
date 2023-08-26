@@ -96,9 +96,12 @@ if __name__ == "__main__":
     elif params['mode']==1:
         #diffusion inference
         save_path,cur_map_path = set_up_envrionment(params)
-        diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
+        #first fetch single-chain structure by fasta using similarity fasta search against PDB, AlphaDB
         from ops.fasta2pool import fasta2pool
         fitting_dict = fasta2pool(params,save_path)
+
+        diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
+
 
         #VESPER singl-chain fitting process
         fitting_dir = os.path.join(save_path,"structure_modeling")

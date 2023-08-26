@@ -15,7 +15,7 @@ def fasta2pool(params,save_path):
     from ops.os_operation import run_command
     pool = Pool(min(params["fasta_thread"],len(chain_dict)))
     for chain_name_list in chain_dict:
-        fasta_list = chain_name_list[chain_dict]
+        fasta_list = chain_dict[chain_name_list]
         chain_name_list = chain_name_list.replace(",","-")
         current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
         mkdir(current_chain_dir)
