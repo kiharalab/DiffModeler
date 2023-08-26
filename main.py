@@ -97,5 +97,17 @@ if __name__ == "__main__":
         #diffusion inference
         save_path,cur_map_path = set_up_envrionment(params)
         diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
+        from ops.fasta2pool import fasta2pool
+        fitting_dict = fasta2pool(params,save_path)
 
-        fitting_dict = fetch_single_chain_candidate(params,save_path)
+        #VESPER singl-chain fitting process
+        fitting_dir = os.path.join(save_path,"structure_modeling")
+        from modeling.fit_structure_chain import fit_structure_chain
+        fit_structure_chain(diff_trace_map,fitting_dict,fitting_dir,params)
+
+        #VESPER assembling
+        modeling_dir = os.path.join(save_path,"structure_assembling")
+        from modeling.assemble_structure import assemble_structure
+        source_cif = assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params)
+        output_cif = os.path.join(save_path,"DiffModeler.cif")
+        shutil.copy(source_cif,output_cif)

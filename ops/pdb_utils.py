@@ -287,10 +287,10 @@ def filter_chain_cif(input_cif,select_chain_name,output_cif):
     with open(input_cif,'r') as rfile:
         with open(output_cif,'w') as wfile:
             #writee header
-            wfile.write("chain_%s\n"%select_chain_name)
-            wfile.write("#\nloop_\n")
-            for block_id in block_list:
-                wfile.write("%s\n"%block_id)
+            # wfile.write("chain_%s\n"%select_chain_name)
+            # wfile.write("#\nloop_\n")
+            # for block_id in block_list:
+            #     wfile.write("%s\n"%block_id)
             for line in rfile:
                 if len(line)>4 and line[:4]=="ATOM":
                     split_info=line.strip("\n").split()
@@ -311,4 +311,72 @@ def filter_chain_cif(input_cif,select_chain_name,output_cif):
                     wfile.write("\n")
                     prev_seq_id=current_seq_id
                     atom_id+=1
+                else:
+                    wfile.write(line)
 
+def cif2pdb(input_cif_path,final_pdb_path):
+    begin_check=False
+    block_list=[]
+    with open(input_cif_path,'r') as rfile:
+        for line in rfile:
+            if "loop_" in line:
+                begin_check=True
+                continue
+
+            if begin_check and "_atom_site" in line:
+                block_list.append(line.strip("\n").replace(" ",""))
+                continue
+            if begin_check and "_atom_site" not in line:
+                begin_check=False
+    atom_ids = block_list.index('_atom_site.id')
+    try:
+        seq_ids = block_list.index('_atom_site.label_seq_id')
+    except:
+        seq_ids = block_list.index('_atom_site.auth_seq_id')
+    chain_ids = block_list.index("_atom_site.label_asym_id")
+    atom_type_ids = block_list.index("_atom_site.label_atom_id")
+    res_name_ids = block_list.index("_atom_site.label_comp_id")
+    x_ids = block_list.index("_atom_site.Cartn_x")
+    y_ids = block_list.index("_atom_site.Cartn_y")
+    z_ids = block_list.index("_atom_site.Cartn_z")
+    with open(input_cif_path,'r') as rfile:
+        with open(final_pdb_path,'w') as wfile:
+
+            for line in rfile:
+                if len(line)>4 and line[:4]=="ATOM":
+                    split_info=line.strip("\n").split()
+                    current_chain = split_info[chain_ids]
+                    current_atom_index = int(split_info[atom_ids])
+                    current_atom_name = split_info[atom_type_ids]
+                    current_res_index = int(split_info[seq_ids])
+                    current_res_name = split_info[res_name_ids]
+                    current_x = float(split_info[x_ids])
+                    current_y = float(split_info[y_ids])
+                    current_z = float(split_info[z_ids])
+                    wline=""
+                    wline += "ATOM%7d %-4s %3s%2s%4d    " % (current_atom_index, current_atom_name,
+                                                             current_res_name, current_chain,current_res_index)
+                    wline = wline + "%8.3f%8.3f%8.3f%6.2f\n" % (current_x,current_y,current_z, 1.0)
+                    wfile.write(wline)
+def filter_chain_pdb(pdb_file_path, chain_name, output_file_path):
+    """
+    Read a PDB file, replace each chain ID based on a dictionary mapping, and write the modified PDB file to disk.
+
+    Args:
+    pdb_file_path (str): The path to the input PDB file.
+    chain_dict (dict): A dictionary mapping old chain IDs to new chain IDs.
+    output_file_path (str): The path to the output PDB file.
+
+    Returns:
+    None
+    """
+    with open(pdb_file_path, 'r') as f:
+        lines = f.readlines()
+
+    with open(output_file_path, 'w') as f:
+        for line in lines:
+            if line.startswith('ATOM'):
+                chain_id = line[21]
+                if chain_id!=chain_name:
+                    continue
+                f.write(line)
