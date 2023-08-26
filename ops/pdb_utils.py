@@ -208,7 +208,13 @@ def replace_chain_ids(pdb_file_path, chain_dict, output_file_path):
                     new_chain_id = chain_dict[chain_id]
                     line = line[:21] + new_chain_id + line[22:]
                 f.write(line)
-
+def count_atom_line(file_path):
+    count=0
+    with open(file_path,'r') as file:
+        for line in file:
+            if len(line)>5 and line[:4]=="ATOM":
+                count+=1
+    return count
 
 def reindex_cif(final_pdb_path,final_cif_path):
     begin_check=False
@@ -254,4 +260,55 @@ def reindex_cif(final_pdb_path,final_cif_path):
                     atom_id+=1
                 else:
                     wfile.write(line)
+
+def filter_chain_cif(input_cif,select_chain_name,output_cif):
+    begin_check=False
+    block_list=[]
+    with open(input_cif,'r') as rfile:
+        for line in rfile:
+            if "loop_" in line:
+                begin_check=True
+                continue
+
+            if begin_check and "_atom_site" in line:
+                block_list.append(line.strip("\n").replace(" ",""))
+                continue
+            if begin_check and "_atom_site" not in line:
+                begin_check=False
+    atom_ids = block_list.index('_atom_site.id')
+    try:
+        seq_ids = block_list.index('_atom_site.label_seq_id')
+    except:
+        seq_ids = block_list.index('_atom_site.auth_seq_id')
+    chain_ids = block_list.index("_atom_site.label_asym_id")
+    atom_id=1
+    seq_id=1
+    prev_seq_id=None
+    with open(input_cif,'r') as rfile:
+        with open(output_cif,'w') as wfile:
+            #writee header
+            wfile.write("chain_%s\n"%select_chain_name)
+            wfile.write("#\nloop_\n")
+            for block_id in block_list:
+                wfile.write("%s\n"%block_id)
+            for line in rfile:
+                if len(line)>4 and line[:4]=="ATOM":
+                    split_info=line.strip("\n").split()
+                    current_chain = split_info[chain_ids]
+                    if current_chain!=select_chain_name:
+                        continue
+                    current_seq_id = int(split_info[seq_ids])
+                    if prev_seq_id is not None and current_seq_id!=prev_seq_id:
+                        seq_id+=1
+                    for j,item in enumerate(split_info):
+                        if j==atom_ids:
+                            wfile.write("%d  "%atom_id)
+
+                        elif j!=seq_ids:
+                            wfile.write("%s  "%item)
+                        else:
+                            wfile.write("%d  "%seq_id)
+                    wfile.write("\n")
+                    prev_seq_id=current_seq_id
+                    atom_id+=1
 

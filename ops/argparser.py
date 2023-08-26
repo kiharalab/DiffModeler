@@ -8,10 +8,10 @@ from collections import OrderedDict
 def argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode',type=int,required=True,help='control mode')
-    parser.add_argument('-F',type=str, help='input map path')#File path for decoy dir
+    parser.add_argument('-F',type=str,required=True, help='input map path')#File path for decoy dir
     parser.add_argument("-P",type=str,help="directory or zipped file of Single-Chain PDB files")
     parser.add_argument("-M",type=str,help="txt file path which records protein information")
-    parser.add_argument("--resolution",type=float,help="specify the resolution to skip diffusion for super high resolution maps (better than 2A)")
+    parser.add_argument("--resolution",type=float,default=5,help="specify the resolution to skip diffusion for super high resolution maps (better than 2A)")
     parser.add_argument("--config",type=str,default=None,help="specifying the config path")
     parser.add_argument("--gpu",type=str,default=None,help="specify the gpu we will use")
     parser.add_argument("--output",type=str,help="Output directory")

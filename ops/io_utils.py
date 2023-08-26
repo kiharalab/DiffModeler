@@ -19,3 +19,11 @@ def load_pickle(path):
 def write_pickle(data,path):
     with open(path,'wb') as file:
         pickle.dump(data, file)
+
+
+def download_file(url,file):
+    import requests
+    response = requests.get(url)
+
+    with open(file, 'wb') as f:
+      f.write(response.content)

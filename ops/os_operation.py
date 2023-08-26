@@ -15,6 +15,9 @@ def execCmd(cmd):
     text = r.read()
     r.close()
     return text
+
+def run_command(cmd):
+    os.system(cmd)
 import shutil
 
 def copy_directory(source_dir, destination_dir):

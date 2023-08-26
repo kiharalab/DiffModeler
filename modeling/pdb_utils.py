@@ -1,5 +1,5 @@
 
-
+from ops.pdb_utils import reindex_cif
 
 def filter_backbone(input_pdb_path,backbone_pdb_path):
     backbone_list=["CA","C","N"]
@@ -169,50 +169,6 @@ def rename_chains_cif(pdb_file,  new_chain_id,cif_file):
 
         for line in cif_lines:
             f.write(line)
-def reindex_cif(final_pdb_path,final_cif_path):
-    begin_check=False
-    block_list=[]
-    with open(final_pdb_path,'r') as rfile:
-        for line in rfile:
-            if "loop_" in line:
-                begin_check=True
-                continue
-
-            if begin_check and "_atom_site" in line:
-                block_list.append(line.strip("\n").replace(" ",""))
-                continue
-            if begin_check and "_atom_site" not in line:
-                begin_check=False
-
-    atom_ids = block_list.index('_atom_site.id')
-    try:
-        seq_ids = block_list.index('_atom_site.label_seq_id')
-    except:
-        seq_ids = block_list.index('_atom_site.auth_seq_id')
-    atom_id=1
-    seq_id=1
-    prev_seq_id=None
-    with open(final_pdb_path,'r') as rfile:
-        with open(final_cif_path,'w') as wfile:
-            for line in rfile:
-                if len(line)>4 and line[:4]=="ATOM":
-                    split_info=line.strip("\n").split()
-                    current_seq_id = int(split_info[seq_ids])
-                    if prev_seq_id is not None and current_seq_id!=prev_seq_id:
-                        seq_id+=1
-                    for j,item in enumerate(split_info):
-                        if j==atom_ids:
-                            wfile.write("%d  "%atom_id)
-
-                        elif j!=seq_ids:
-                            wfile.write("%s  "%item)
-                        else:
-                            wfile.write("%d  "%seq_id)
-                    wfile.write("\n")
-                    prev_seq_id=current_seq_id
-                    atom_id+=1
-                else:
-                    wfile.write(line)
 
 def collect_final_pdb(modeling_dir,chain_visit_dict):
     final_pdb_path = os.path.join(modeling_dir,"Final_unformated.cif")
