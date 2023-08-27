@@ -5,6 +5,9 @@ from ops.pdb_utils import count_atom_line,filter_chain_cif,cif2pdb,filter_chain_
 def fasta2pool(params,save_path):
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
     mkdir(single_chain_pdb_dir)
+
+    final_pdb_dir = os.path.join(single_chain_pdb_dir,"PDB")
+    mkdir(final_pdb_dir)
     fasta_path = os.path.abspath(params['P'])
     from ops.fasta_utils import read_fasta,write_fasta
     chain_dict = read_fasta(fasta_path)
@@ -17,6 +20,9 @@ def fasta2pool(params,save_path):
     for chain_name_list in chain_dict:
         fasta_list = chain_dict[chain_name_list]
         chain_name_list = chain_name_list.replace(",","-")
+        final_pdb_path = os.path.join(final_pdb_dir,chain_name_list+".pdb")
+        if os.path.exists(final_pdb_path) and count_atom_line(final_pdb_path)>=50:
+            continue
         current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
         mkdir(current_chain_dir)
         input_fasta_path = os.path.join(current_chain_dir,"input.fasta")
@@ -29,13 +35,17 @@ def fasta2pool(params,save_path):
     pool.close()
     pool.join()
 
-    final_pdb_dir = os.path.join(single_chain_pdb_dir,"PDB")
-    mkdir(final_pdb_dir)
+
     #after blocking finished, extract the top 1 id and fetch corressponding pdb from pdb/afdb
     fitting_dict={}
     for chain_name_list in chain_dict:
 
         chain_name_list = chain_name_list.replace(",","-")
+        final_pdb_path = os.path.join(final_pdb_dir,chain_name_list+".pdb")
+        if os.path.exists(final_pdb_path) and count_atom_line(final_pdb_path)>=50:
+            final_chain_list = chain_name_list.split("-")
+            fitting_dict[final_pdb_path]=final_chain_list
+            continue
         current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
         listfiles = [x for x in os.listdir(current_chain_dir) if ".ids.txt" in x]
         if len(listfiles)==0:
@@ -54,7 +64,7 @@ def fasta2pool(params,save_path):
             split_info = line.split(":")
             database = split_info[0]
             pdb_id = split_info[1]
-        final_pdb_path = os.path.join(final_pdb_dir,chain_name_list+".pdb")
+
         if database=="PDB":
             pdb = pdb_id.split("_")[0]
             chain_id = pdb_id.split("_")[1]
