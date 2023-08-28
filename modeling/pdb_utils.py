@@ -138,6 +138,7 @@ def rename_chains_cif(pdb_file,  new_chain_id,cif_file):
             new_line += line[46:54]+"\t"
             new_line += line[54:60]+"\t"
             new_line += line[60:66]+"\t"
+            new_line += "\n"
             cif_lines.append(new_line)
 
         # if line.startswith('ENDMDL'):
