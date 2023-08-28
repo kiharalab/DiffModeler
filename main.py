@@ -32,6 +32,11 @@ def set_up_envrionment(params):
         save_path=params['output']
         map_name="input"
         mkdir(save_path)
+    try:
+        print("pre-compile VESPER to accelerate!")
+        os.system("python -O -m compileall VESPER_CUDA")
+    except:
+        print("pre-compile VESPER failed! No impact to main scripts!")
     save_path = os.path.abspath(save_path)
     from data_processing.Unify_Map import Unify_Map
     cur_map_path = Unify_Map(cur_map_path,os.path.join(save_path,map_name+"_unified.mrc"))
