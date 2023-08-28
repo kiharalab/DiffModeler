@@ -16,6 +16,7 @@ def argparser():
     parser.add_argument("--gpu",type=str,default=None,help="specify the gpu we will use")
     parser.add_argument("--output",type=str,help="Output directory")
     parser.add_argument("--contour",type=float,default=0,help="Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0")
+    parser.add_argument('--fast',  action='store_true', help="Specify where to use fast version or not")
     args = parser.parse_args()
     # remove comments starting with '//'
     json_str = ''
