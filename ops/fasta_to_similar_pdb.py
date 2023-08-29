@@ -235,7 +235,7 @@ def serviceGetStatus(jobId):
     requestUrl = baseUrl + u'/status/' + jobId
     printDebugMessage(u'serviceGetStatus', u'requestUrl: ' + requestUrl, 2)
     status = restRequest(requestUrl)
-    printDebugMessage(u'serviceGetStatus', u'status: ', status, 2)
+    printDebugMessage(u'serviceGetStatus', u'status: ' + str(status), 2)
     printDebugMessage(u'serviceGetStatus', u'End', 1)
     return status
 
