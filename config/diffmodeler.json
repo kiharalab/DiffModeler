@@ -2,7 +2,7 @@
 
 {
     "phase": "infer",
-    "fasta_thread": 24,
+    "fasta_thread": 4,
     "email": "wang3702@purdue.edu",
     "model": {
       "path": "best_model/diffusion_best.pth.tar",
