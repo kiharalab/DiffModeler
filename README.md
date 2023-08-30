@@ -102,7 +102,7 @@ options:
   --output OUTPUT       Output directory
   --contour CONTOUR     Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0
 ```
-### 1. Protein Structure Complex Modeling
+### 1. Protein Structure Complex Modeling with provided template
 ```commandline
 python3 main.py --mode=0 -F=[Map_Path] -P=[Single_chain_structure_dir] -M=[protin_config_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
@@ -130,6 +130,31 @@ You can also use this command line to specify the zip file including all single-
 ```commandline
 python3 main.py --mode=0 -F=example/6824.mrc -P=example/6824.zip -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
+
+### 2. Protein Structure Complex Modeling with sequence
+```commandline
+python3 main.py --mode=1 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
+```
+[Map_Path] is the path of the input experimental cryo-EM map, [fasta_path] specifis the path of sequence file with .fasta format. [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
+
+<b>Please update ``email`` field in config/diffmodeler.json to your email.</b> 
+
+Example of fasta file
+```
+>A,B,C,D
+MATPAGRRASETERLLTPNPGYGTQVGTSPAPTTPTEEEDLRR
+>E,F
+VVTFREENTIAFRHLFLLGYSDGSDDTFAAYTQEQLYQ
+```
+For ID line, please only include the chain id without any other information. If multiple chains include the identical sequences, please use comma "," to split different chains.
+<br> In this example, we have 6 chains in total, with A,B,C,D share the identical sequences and E,F share another identical sequences.
+
+### Example Command
+```commandline
+python3 main.py --mode=0 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
+```
+
+
 ## Example
 ### Input File
 Cryo-EM map with mrc format. 

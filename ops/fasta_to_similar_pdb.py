@@ -260,7 +260,7 @@ def serviceGetResultTypes(jobId):
     requestUrl = baseUrl + u'/resulttypes/' + jobId
     printDebugMessage(u'serviceGetResultTypes', u'requestUrl: ' + requestUrl, 2)
     xmlDoc = restRequest(requestUrl)
-    doc = xmltramp.parse(str(xmlDoc))
+    doc = xmltramp.parse(xmlDoc)
     printDebugMessage(u'serviceGetResultTypes', u'End', 1)
     return doc[u'type':]
 
