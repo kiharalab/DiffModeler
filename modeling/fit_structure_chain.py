@@ -130,7 +130,7 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
                                  %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,
                                  params['vesper']['simu_cutoff'],kernel_size,
                                    voxel_spacing,angle_spacing,
-                                   params['vesper']['num_models'],params['vesper']['rank_mode'],output_dir,
+                                   params['vesper']['local_num_models'],params['vesper']['rank_mode'],output_dir,
                                    input_pdb_path,backbone_pdb,ldp_pdb_path,params['vesper']['thread'],output_pdb_path
                                    )
     else:
@@ -139,7 +139,7 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
                                  %(vesper_script,input_map_path,params['vesper']['ldp_cutoff'],gen_reso_map_path,
                                  params['vesper']['simu_cutoff'],kernel_size,
                                    voxel_spacing,angle_spacing,
-                                   params['vesper']['num_models'],params['vesper']['rank_mode'],output_dir,
+                                   params['vesper']['local_num_models'],params['vesper']['rank_mode'],output_dir,
                                    input_pdb_path,backbone_pdb,ldp_pdb_path,params['vesper']['thread'],
                                    params['vesper']['local_angle_range'],output_pdb_path
                                    )

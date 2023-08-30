@@ -79,44 +79,39 @@ def construct_single_chain_candidate(params,save_path):
 
 if __name__ == "__main__":
     params = argparser()
+    save_path,cur_map_path = set_up_envrionment(params)
 
     if params['mode']==0:
-
-        #diffusion inference
-        save_path,cur_map_path = set_up_envrionment(params)
-        diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
         #first build a dict from the input text configure file
         fitting_dict = construct_single_chain_candidate(params,save_path)
-
-        #VESPER singl-chain fitting process
-        fitting_dir = os.path.join(save_path,"structure_modeling")
-        from modeling.fit_structure_chain import fit_structure_chain
-        fit_structure_chain(diff_trace_map,fitting_dict,fitting_dir,params)
-
-        #VESPER assembling
-        modeling_dir = os.path.join(save_path,"structure_assembling")
-        from modeling.assemble_structure import assemble_structure
-        source_cif = assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params)
-        output_cif = os.path.join(save_path,"DiffModeler.cif")
-        shutil.copy(source_cif,output_cif)
     elif params['mode']==1:
-        #diffusion inference
-        save_path,cur_map_path = set_up_envrionment(params)
-        #first fetch single-chain structure by fasta using similarity fasta search against PDB, AlphaDB
         from ops.fasta2pool import fasta2pool
         fitting_dict = fasta2pool(params,save_path)
+    elif params['mode']==2:
+        from ops.fasta_searchdb import fasta_searchdb
+        fitting_dict = fasta_searchdb(params,save_path)
+        if params['seq_search']:
+            print("sequence search finished!")
+            exit()
+    else:
+        print("mode %d is not supported!"%params['mode'])
+        exit()
 
-        diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
+    #diffusion inference
+    diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
+
+    #VESPER singl-chain fitting process
+    fitting_dir = os.path.join(save_path,"structure_modeling")
+    from modeling.fit_structure_chain import fit_structure_chain
+    fit_structure_chain(diff_trace_map,fitting_dict,fitting_dir,params)
+
+    #VESPER assembling
+    modeling_dir = os.path.join(save_path,"structure_assembling")
+    from modeling.assemble_structure import assemble_structure
+    source_cif = assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params)
+    output_cif = os.path.join(save_path,"DiffModeler.cif")
+    shutil.copy(source_cif,output_cif)
 
 
-        #VESPER singl-chain fitting process
-        fitting_dir = os.path.join(save_path,"structure_modeling")
-        from modeling.fit_structure_chain import fit_structure_chain
-        fit_structure_chain(diff_trace_map,fitting_dict,fitting_dir,params)
 
-        #VESPER assembling
-        modeling_dir = os.path.join(save_path,"structure_assembling")
-        from modeling.assemble_structure import assemble_structure
-        source_cif = assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params)
-        output_cif = os.path.join(save_path,"DiffModeler.cif")
-        shutil.copy(source_cif,output_cif)
+

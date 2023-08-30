@@ -29,3 +29,12 @@ def write_fasta(fasta_list,use_chain_name,input_fasta_path):
         file.write(">%s\n"%use_chain_name)
         for item in fasta_list:
             file.write(item)
+
+def write_all_fasta(chain_dict,output_path):
+    with open(output_path,'w') as wfile:
+        for key in chain_dict:
+            wfile.write(">%s\n"%key)
+            fasta_list = chain_dict[key]
+            for item in fasta_list:
+                wfile.write(item)
+            wfile.write("\n")

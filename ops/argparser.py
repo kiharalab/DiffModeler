@@ -17,6 +17,7 @@ def argparser():
     parser.add_argument("--output",type=str,help="Output directory")
     parser.add_argument("--contour",type=float,default=0,help="Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0")
     parser.add_argument('--fast',  action='store_true', help="Specify where to use fast version or not")
+    parser.add_argument("--seq_search",action='store_true',help="only search sequence against db, for server usage")
     args = parser.parse_args()
     # remove comments starting with '//'
     json_str = ''

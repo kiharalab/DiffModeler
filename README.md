@@ -31,7 +31,7 @@ Xiao Wang, Han Zhu, Genki Terashi & Daisuke Kihara. Protein Complex Structure Mo
 ```
 
 ## Free Online Server: 
-### Input map+single-chain structure: https://em.kiharalab.org/algorithm/DiffModeler
+### Input map+single-chain structures: https://em.kiharalab.org/algorithm/DiffModeler
 ### Input map+sequence: https://em.kiharalab.org/algorithm/DiffModeler(seq)
 
 ## Introduction

@@ -4,6 +4,7 @@
     "phase": "infer",
     "fasta_thread": 4,
     "email": "wang3702@purdue.edu",
+    "db_path": "data/rcsb_afdb.db",//for server usage, remove dependency on EBI's API
     "model": {
       "path": "best_model/diffusion_best.pth.tar",
       "unet": {
@@ -57,6 +58,7 @@
       "voxel_spacing": 2,
       "angle_spacing": 10,
       "num_models": 100,
+      "local_num_models": 1,
       "rank_mode": "C",
       "thread": 6,
       "local_angle_range": 20,
