@@ -73,7 +73,7 @@ def fasta_searchdb(params,save_path):
     fitting_dict={}
 
     for chain_name_list in chain_dict:
-        matched_id = chain_dict[chain_name_list]
+        matched_id = matched_dict[chain_name_list]
         chain_name_list = chain_name_list.replace(",","-")
         current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
         mkdir(current_chain_dir)

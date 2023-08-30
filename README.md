@@ -156,7 +156,7 @@ For ID line, please only include the chain id without any other information. If 
 
 ### Example Command
 ```commandline
-python3 main.py --mode=0 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
+python3 main.py --mode=1 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
 
 
