@@ -30,7 +30,9 @@ Xiao Wang, Han Zhu, Genki Terashi & Daisuke Kihara. Protein Complex Structure Mo
 }   
 ```
 
-## Free Online Server: https://em.kiharalab.org/algorithm/DiffModeler
+## Free Online Server: 
+### Input map+single-chain structure: https://em.kiharalab.org/algorithm/DiffModeler
+### Input map+sequence: https://em.kiharalab.org/algorithm/DiffModeler(seq)
 
 ## Introduction
 Cryogenic electron microscopy (cryo-EM) has been widely employed in experimental settings to determine multi-chain protein complexes, but modeling accuracy greatly diminishes when resolution decreases. At intermediate resolutions of 5-10 Å, even template-based structure fitting presents significant challenges. To tackle this issue, we introduce DiffModeler, a fully automated protein complex structure modeling method that leverages a diffusion model for backbone tracing and structure fitting with AlphaFold predicted single-chain structure. In extensive testing on cryo-EM maps at intermediate resolution, DiffModeler showcased remarkably accurate structure modeling, surpassing existing methods significantly. Notably, we successfully modeled a protein complex consisting of 47 chains, comprising 13,462 residues, with an impressive TM-Score of 0.9. We also further benchmarked DiffModeler for maps at low resolution of 10-20 Å and validated its generalizability with plausible performances. 
@@ -136,8 +138,10 @@ python3 main.py --mode=0 -F=example/6824.mrc -P=example/6824.zip -M=example/inpu
 python3 main.py --mode=1 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
 [Map_Path] is the path of the input experimental cryo-EM map, [fasta_path] specifis the path of sequence file with .fasta format. [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
-
 <b>Please update ``email`` field in config/diffmodeler.json to your email.</b> 
+
+This is based on <a href='https://www.ebi.ac.uk/Tools/sss/fasta/'>EBI Search Tool</a> aginst structure database to find most similar structures as templates for us to model protein complex. 
+<br><b>Please use our [server](https://em.kiharalab.org/algorithm/DiffModeler(seq)) if with more than 4 non-identical chains. </b> EBI's API is too slow to respond when you have many non-identical sequences.
 
 Example of fasta file
 ```
@@ -148,6 +152,7 @@ VVTFREENTIAFRHLFLLGYSDGSDDTFAAYTQEQLYQ
 ```
 For ID line, please only include the chain id without any other information. If multiple chains include the identical sequences, please use comma "," to split different chains.
 <br> In this example, we have 6 chains in total, with A,B,C,D share the identical sequences and E,F share another identical sequences.
+
 
 ### Example Command
 ```commandline
