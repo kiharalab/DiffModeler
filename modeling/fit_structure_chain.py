@@ -12,7 +12,7 @@ from modeling.map_utils import mask_map_by_pdb,format_map
 def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
     mkdir(fitting_dir)
     if params['fast']:
-        bandwidth_list=[2]
+        bandwidth_list=[1]
     else:
         bandwidth_list=[1,2]
     fit_target_map_list=[]

@@ -3,6 +3,7 @@
 {
     "phase": "infer",
     "fasta_thread": 4,
+    "search_thread": 8,
     "email": "wang3702@purdue.edu",
     "db_path": "data/rcsb_afdb.db",//for server usage, remove dependency on EBI's API
     "model": {
