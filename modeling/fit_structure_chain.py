@@ -11,10 +11,12 @@ from modeling.map_utils import mask_map_by_pdb,format_map
 
 def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
     mkdir(fitting_dir)
+
+    bandwidth_list=[1,2]
     if params['fast']:
-        bandwidth_list=[1]
+        use_band_width=[1]
     else:
-        bandwidth_list=[1,2]
+        use_band_width = bandwidth_list
     fit_target_map_list=[]
     for bandwidth in bandwidth_list:
         output_pdb_dir = os.path.join(fitting_dir,"LDP_%s"%(bandwidth))
@@ -22,7 +24,8 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
         map_ldp_pdb_path = os.path.join(output_pdb_dir,"chain_LDP.pdb")
         if not os.path.exists(map_ldp_pdb_path):
             build_ldp(input_map_path,output_pdb_dir,params['LDP'])
-        fit_target_map_list.append(os.path.join(output_pdb_dir,"chain_LDP.mrc"))
+        if bandwidth in use_band_width:
+            fit_target_map_list.append(os.path.join(output_pdb_dir,"chain_LDP.mrc"))
         verify_pdb_path = map_ldp_pdb_path
     root_fit_target_list = fit_target_map_list
 
