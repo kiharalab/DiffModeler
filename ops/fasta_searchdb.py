@@ -3,7 +3,7 @@ from ops.os_operation import mkdir
 from ops.io_utils import download_file
 from ops.pdb_utils import count_atom_line,filter_chain_cif,cif2pdb,filter_chain_pdb
 from ops.fasta_utils import read_fasta,write_all_fasta
-
+from ops.io_utils import write_pickle,load_pickle
 def parse_blast_output(blast_file):
     match_dict={}
     read_flag=False
@@ -28,6 +28,10 @@ def parse_blast_output(blast_file):
 def fasta_searchdb(params,save_path):
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
     mkdir(single_chain_pdb_dir)
+    fitting_pickle_path = os.path.join(save_path,"fitting_dict.pkl")
+    if os.path.exists(fitting_pickle_path) and os.path.getsize(fitting_pickle_path)>10:
+        fitting_dict = load_pickle(fitting_pickle_path)
+        return fitting_dict
     #reorganize data
     fasta_path = os.path.abspath(params['P'])
     chain_dict = read_fasta(fasta_path)
@@ -111,4 +115,5 @@ def fasta_searchdb(params,save_path):
         final_chain_list = chain_name_list.split("-")
         fitting_dict[final_pdb_path]=final_chain_list
     print("collecting finish: fitting dict: ",fitting_dict)
+    write_pickle(fitting_dict,fitting_pickle_path)
     return fitting_dict
