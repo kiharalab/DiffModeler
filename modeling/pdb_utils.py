@@ -101,8 +101,8 @@ def remove_overlap_pdb(score_dict,fitted_pdb,clash_distance=3,ratio_cutoff=0.05)
         query_atom_locations = extract_residue_locations(current_pdb_path)
         query_atom_locations = torch.from_numpy(query_atom_locations).cuda()
         distance_array = torch.cdist(query_atom_locations,current_atom_locations, p=2)
-        distance_array,_ = torch.min(distance_array,dim=1)
-        ratio_close = len(distance_array[distance_array<=clash_distance])/len(query_atom_locations)
+        distance_array = torch.amin(distance_array,dim=1)
+        ratio_close = (distance_array < clash_distance).sum().item() / len(query_atom_locations)#len(distance_array[distance_array<=clash_distance])/len(query_atom_locations)
         if ratio_close<ratio_cutoff:
             new_score_dict[key]=score_dict[key]
         else:

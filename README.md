@@ -104,7 +104,10 @@ options:
   --output OUTPUT       Output directory
   --contour CONTOUR     Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0
 ```
+## Run DiffModeler with three different modes
 ### 1. Protein Structure Complex Modeling with provided template
+This is for DiffModeler running if you have map and available template candiates (either from experimental or AlphaFold predicted structure).
+It is fine to run if you only know some of the template structures..
 ```commandline
 python3 main.py --mode=0 -F=[Map_Path] -P=[Single_chain_structure_dir] -M=[protin_config_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
@@ -133,7 +136,10 @@ You can also use this command line to specify the zip file including all single-
 python3 main.py --mode=0 -F=example/6824.mrc -P=example/6824.zip -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
 
-### 2. Protein Structure Complex Modeling with sequence
+### 2. Protein Structure Complex Modeling with sequence (EBI-search)
+This is for DiffModeler running if you have map and corresponding sequence. It is fine to run if you only know some of the sequences.
+<br><b>Please use our [server](https://em.kiharalab.org/algorithm/DiffModeler(seq)) if with more than 4 non-identical chains. </b> EBI's API is too slow to respond when you have many non-identical sequences. <br>
+This mode can only support structure modeling with less than 4 non-identical chains because of EBI's search tool limit.
 ```commandline
 python3 main.py --mode=1 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
@@ -153,12 +159,36 @@ VVTFREENTIAFRHLFLLGYSDGSDDTFAAYTQEQLYQ
 For ID line, please only include the chain id without any other information. If multiple chains include the identical sequences, please use comma "," to split different chains.
 <br> In this example, we have 6 chains in total, with A,B,C,D share the identical sequences and E,F share another identical sequences.
 
-
 ### Example Command
 ```commandline
 python3 main.py --mode=1 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
 
+### 3. Protein Structure Complex Modeling with sequence (Local Sequence Database)
+This is for DiffModeler running if you have map and corresponding sequence. It is fine to run if you only know some of the sequences. If you have more 4 non-identical chains, you can set up local sequence database to run DiffModeler by yourself.
+<br><b>This is the mode used in server. We highly recommend to directly user [server](https://em.kiharalab.org/algorithm/DiffModeler(seq)) </b>
+### 3.1 Install Blast
+Please follow the instructions in [NCBI website](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html) to install Blast locally.
+### 3.2 Download and install database
+Download the processed database from https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/tree/main.
+You can also use command line
+```commandline
+wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.aa
+wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.ab
+wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.ac
+```
+After downloading finished, unzip the database to ``data`` subdirectory under this project.
+
+### 3.3 Run DiffModeler
+After configuring the environment, please run 
+```commandline
+python3 main.py --mode=2 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
+```
+[Map_Path] is the path of the input experimental cryo-EM map, [fasta_path] specifis the path of sequence file with .fasta format. [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
+### Example Command
+```commandline
+python3 main.py --mode=2 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
+```
 
 ## Example
 ### Input File
@@ -171,4 +201,4 @@ DiffModeler.cif: a CIF file that records the final modeled protein complex struc
 Our example output can be found [here](https://kiharalab.org/emsuites/diffmodelder_example/output). All the intermediate results are also kept here. 
 
 ## Benchmark Dataset
-All input and output of the benchmarked datasets are maintained [here](https://kiharalab.org/emsuites/diffmodelder_benchmark)
+All input of the benchmarked datasets are maintained [here](https://kiharalab.org/emsuites/diffmodelder_benchmark)
