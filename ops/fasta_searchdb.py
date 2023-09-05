@@ -66,6 +66,11 @@ def fasta_searchdb(params,save_path):
                                                                             output_path, params['search_thread'])
         os.system(search_command)
         expaf_match_dict = parse_blast_output(output_path)
+        if len(expaf_match_dict)!=len(remain_chain_dict):
+            for tmp_key in remain_chain_dict:
+                if tmp_key not in expaf_match_dict:
+                    print("warning, query %s not find any templates in database"%tmp_key)
+
         for key in expaf_match_dict:
             match_id, evalue = expaf_match_dict[key]
             if "AFDB" in match_id:
@@ -77,6 +82,11 @@ def fasta_searchdb(params,save_path):
     fitting_dict={}
 
     for chain_name_list in chain_dict:
+        if chain_name_list not in matched_dict:
+            print("*"*100)
+            print("WARNING! query %s not find any templates in database"%chain_name_list)
+            print("*"*100)
+            continue
         matched_id = matched_dict[chain_name_list]
         chain_name_list = chain_name_list.replace(",","-")
         current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))

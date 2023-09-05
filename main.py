@@ -97,6 +97,10 @@ if __name__ == "__main__":
         print("mode %d is not supported!"%params['mode'])
         exit()
 
+    if len(fitting_dict)==0:
+        print("Empty Template candiate, DiffModeler can not run!!!")
+        exit()
+
     #diffusion inference
     diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
 

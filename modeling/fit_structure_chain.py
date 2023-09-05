@@ -7,7 +7,7 @@ import shutil
 from ops.io_utils import load_pickle,write_pickle
 from modeling.score_utils import read_score
 from modeling.map_utils import mask_map_by_pdb,format_map
-
+import torch
 
 def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
     mkdir(fitting_dir)
@@ -69,6 +69,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
                                    params['vesper']['num_models'],params['vesper']['rank_mode'],cur_fit_experiment_path,
                                    pdb_path,backbone_pdb,verify_pdb_path,params['vesper']['thread'],output_path
                                    )
+                    torch.cuda.empty_cache()
                     os.system(command_line)
                     pdb_dir=os.path.join(cur_fit_experiment_path,"PDB")
                     read_score(new_score_dict,pdb_dir,output_path)
@@ -146,6 +147,7 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
                                    input_pdb_path,backbone_pdb,ldp_pdb_path,params['vesper']['thread'],
                                    params['vesper']['local_angle_range'],output_pdb_path
                                    )
+    torch.cuda.empty_cache()
     os.system(command_line)
     new_score_dict={}
     pdb_dir=os.path.join(output_dir,"PDB")
