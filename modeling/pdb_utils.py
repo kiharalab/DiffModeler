@@ -41,7 +41,7 @@ def generate_move_structure(input_pdb_path,output_dir,vesper_path,count_model):
                 pdbio.save(os.path.join(output_dir,"vesper_%d.pdb"%count_model))
                 count_model+=1
     return count_model
-def extract_residue_locations(pdb_file):
+def extract_residue_locations_slow(pdb_file):
     # Load the PDB file
     parser = PDBParser(QUIET=True)
     structure = parser.get_structure('structure', pdb_file)
@@ -57,7 +57,19 @@ def extract_residue_locations(pdb_file):
                     residue_locations.append(atom.get_coord())
 
     return np.array(residue_locations)
+def extract_residue_locations(pdb_file):
+    residue_locations = []
+    with open(pdb_file) as f:
+        for line in f:
+            if line.startswith("ATOM") and line[12:16].strip() == "CA":  # only CA atoms
+                # if tokens[0] == "ATOM": # all atoms
+                residue_locations.append(
+                    np.array(
+                        (float(line[30:38]), float(line[38:46]), float(line[46:54]))
+                    )
+                )
 
+    return np.array(residue_locations)
 
 def find_identical_chain(fit_dict,query_chain,visit_dict):
     for key in fit_dict:
