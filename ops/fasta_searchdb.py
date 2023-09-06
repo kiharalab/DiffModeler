@@ -69,7 +69,7 @@ def fasta_searchdb(params,save_path):
         if len(expaf_match_dict)!=len(remain_chain_dict):
             for tmp_key in remain_chain_dict:
                 if tmp_key not in expaf_match_dict:
-                    print("warning, query %s not find any templates in database"%tmp_key)
+                    print("warning, query %s can not find any templates in database"%tmp_key)
 
         for key in expaf_match_dict:
             match_id, evalue = expaf_match_dict[key]
@@ -84,7 +84,7 @@ def fasta_searchdb(params,save_path):
     for chain_name_list in chain_dict:
         if chain_name_list not in matched_dict:
             print("*"*100)
-            print("WARNING! query %s not find any templates in database"%chain_name_list)
+            print("WARNING! query %s can not find any templates in database"%chain_name_list)
             print("*"*100)
             continue
         matched_id = matched_dict[chain_name_list]
