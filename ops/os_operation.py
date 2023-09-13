@@ -73,10 +73,10 @@ def extract_compressed_file(file_path, extract_dir):
     base_name = os.path.basename(file_path)
 
     if file_path.endswith('.tar.gz') or file_path.endswith('.tgz'):
-        with tarfile.open(file_path, 'r:gz') as tar:
+        with tarfile.open(file_path) as tar:
             tar.extractall(path=extract_dir)
     elif file_path.endswith('.tar'):
-        with tarfile.open(file_path, 'r:') as tar:
+        with tarfile.open(file_path) as tar:
             tar.extractall(path=extract_dir)
     elif file_path.endswith('.gz'):
         output_path = os.path.join(extract_dir, os.path.splitext(base_name)[0])
