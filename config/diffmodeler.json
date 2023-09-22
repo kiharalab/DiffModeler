@@ -73,5 +73,8 @@
       "mask_cutoff": 20,
       "clash_distance": 3,
         "overlap_ratio_limit": 0.05
+    },
+    "search": {
+      "length_ratio": 0.9
     }
 }

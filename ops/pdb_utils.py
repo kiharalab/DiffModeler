@@ -405,3 +405,36 @@ def filter_chain_pdb(pdb_file_path, chain_name, output_file_path):
                 if chain_id!=chain_name:
                     continue
                 f.write(line)
+def count_residues(input_pdb_path):
+
+
+
+    protein_set=["ALA", "VAL", "PHE", "PRO", "MET", "ILE", "LEU", "ASP", "GLU", "LYS", "ARG", "SER", "THR", "TYR",
+                    "HIS", "CYS", "ASN", "TRP", "GLN", "GLY"]
+    protein_set = set(protein_set)
+    count_res =0
+    prev_nuc_id = None
+    with open(input_pdb_path,'r') as rfile:
+        for line in rfile:
+            if line.startswith("ATOM") or line.startswith("HETATM"):
+                #split_result = line.split()
+
+                chain_id = line[21]
+                atom_name = line[12:16]
+                x=float(line[30:38])
+                y=float(line[38:46])
+                z=float(line[46:54])
+                nuc_id=int(line[22:26])
+
+                score = float(line[60:68])
+                resn = line[17:20]
+                coordinates = [x,y,z]
+                nuc_type = resn#split_result[5]
+                nuc_type = nuc_type.replace(" ","")
+                if nuc_type not in protein_set:
+                    print("non protein %s"%line)
+                    continue
+                if nuc_id!=prev_nuc_id:
+                    count_res+=1
+                prev_nuc_id=nuc_id
+    return count_res
