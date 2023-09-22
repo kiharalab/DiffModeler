@@ -425,8 +425,6 @@ def count_residues(input_pdb_path):
                 y=float(line[38:46])
                 z=float(line[46:54])
                 nuc_id=int(line[22:26])
-
-                score = float(line[60:68])
                 resn = line[17:20]
                 coordinates = [x,y,z]
                 nuc_type = resn#split_result[5]
