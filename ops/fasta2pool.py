@@ -74,7 +74,8 @@ def fasta2pool(params,save_path):
                 download_pdb(pdb_id,current_chain_dir,final_pdb_path)
                 expected_seq_length = len(chain_dict[chain_name_list.replace("-",",")])*params['search']['length_ratio']
                 actual_structure_length = count_residues(final_pdb_path)
-                if actual_structure_length>=expected_seq_length:
+                if actual_structure_length>=expected_seq_length and \
+                        actual_structure_length<=len(chain_dict[chain_name_list.replace("-",",")]):
                     break
             else:
                 #alphafold db

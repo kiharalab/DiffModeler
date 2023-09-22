@@ -91,7 +91,7 @@ def fasta_searchdb(params,save_path):
                 final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
                 download_pdb(match_id,current_chain_dir,final_pdb_path)
                 actual_structure_length = count_residues(final_pdb_path)
-                if actual_structure_length>=expected_seq_length:
+                if actual_structure_length>=expected_seq_length and actual_structure_length<=len(chain_dict[key]):
                     matched_dict[key]="PDB:"+match_id
                     final_chain_list = chain_name_list.split("-")
                     fitting_dict[final_pdb_path]=final_chain_list
@@ -135,7 +135,7 @@ def fasta_searchdb(params,save_path):
                     final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
                     download_pdb(match_id,current_chain_dir,final_pdb_path)
                     actual_structure_length = count_residues(final_pdb_path)
-                    if actual_structure_length>=expected_seq_length:
+                    if actual_structure_length>=expected_seq_length  and actual_structure_length<=len(chain_dict[key]):
                         matched_dict[key]="PDB:"+match_id
                         final_chain_list = chain_name_list.split("-")
                         fitting_dict[final_pdb_path]=final_chain_list
