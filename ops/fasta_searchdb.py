@@ -124,35 +124,43 @@ def fasta_searchdb(params,save_path):
         for key in expaf_match_dict:
             closest_choice=None
             num_res_difference=999999999
-            current_match_list = exp_match_dict[key]
+            current_match_list = expaf_match_dict[key]
             print("match candidate:",key,current_match_list)
+            chain_name_list = key.replace(",","-")
+            current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
+            mkdir(current_chain_dir)
+            final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
+            expected_seq_length = len(chain_dict[key])*params['search']['length_ratio']
             for k in range(len(current_match_list)):
                 match_id, evalue = current_match_list[k]
                 if "AFDB" in match_id:
-                    matched_dict[key]=match_id
-
+                    split_info = match_id.split(":")
+                    database = split_info[0]
+                    pdb_id = split_info[1]
+                    download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb"%pdb_id
+                    download_file(download_link,final_pdb_path)
+                else:
+                    download_pdb(match_id,current_chain_dir,final_pdb_path)
+                actual_structure_length = count_residues(final_pdb_path)
+                if actual_structure_length>=expected_seq_length  and actual_structure_length<=len(chain_dict[key]):
+                    if "AFDB" in match_id:
+                        matched_dict[key]=match_id
+                    else:
+                        matched_dict[key]="PDB:"+match_id
+                    final_chain_list = chain_name_list.split("-")
+                    fitting_dict[final_pdb_path]=final_chain_list
                     break
                 else:
-                    expected_seq_length = len(chain_dict[key])*params['search']['length_ratio']
-                    chain_name_list = key.replace(",","-")
-                    current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
-                    mkdir(current_chain_dir)
-                    final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
-                    download_pdb(match_id,current_chain_dir,final_pdb_path)
-                    actual_structure_length = count_residues(final_pdb_path)
-                    if abs(actual_structure_length-len(chain_dict[key]))<num_res_difference:
-                        num_res_difference =abs(actual_structure_length-len(chain_dict[key]))
-                        closest_choice = match_id
-                    if actual_structure_length>=expected_seq_length  and actual_structure_length<=len(chain_dict[key]):
-                        matched_dict[key]="PDB:"+match_id
-                        final_chain_list = chain_name_list.split("-")
-                        fitting_dict[final_pdb_path]=final_chain_list
-                        break
-                    else:
-                        os.remove(final_pdb_path)
-                        functToDeleteItems(current_chain_dir)
+                    os.remove(final_pdb_path)
+                    functToDeleteItems(current_chain_dir)
+                if abs(actual_structure_length-len(chain_dict[key]))<num_res_difference:
+                    num_res_difference =abs(actual_structure_length-len(chain_dict[key]))
+                    closest_choice = match_id
             if key not in matched_dict:
-                matched_dict[key]="PDB:"+closest_choice
+                if "AFDB" in closest_choice:
+                    matched_dict[key]=closest_choice
+                else:   
+                    matched_dict[key]="PDB:"+closest_choice
                 print("we have no better choice but pick %s with %d residues differences"%(closest_choice,num_res_difference))
     print("DB search finished! Match relationship ",matched_dict)
     #get the matched dict
