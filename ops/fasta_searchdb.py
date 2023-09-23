@@ -28,9 +28,12 @@ def parse_blast_output(blast_file):
                     for k in range(1,30):
                         new_line=all_lines[k+line_index]
                         new_line = new_line.strip("\n").split()
-                        match_id = new_line[0]
-                        score = float(new_line[-1])
-                        match_dict[current_id].append([match_id,score])
+                        try:
+                            match_id = new_line[0]
+                            score = float(new_line[-1])
+                            match_dict[current_id].append([match_id,score])
+                        except:
+                            break
                     read_flag=False
     return match_dict
 
@@ -159,7 +162,7 @@ def fasta_searchdb(params,save_path):
             if key not in matched_dict:
                 if "AFDB" in closest_choice:
                     matched_dict[key]=closest_choice
-                else:   
+                else:
                     matched_dict[key]="PDB:"+closest_choice
                 print("we have no better choice but pick %s with %d residues differences"%(closest_choice,num_res_difference))
     print("DB search finished! Match relationship ",matched_dict)
