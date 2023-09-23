@@ -1,5 +1,5 @@
 import os
-from ops.os_operation import mkdir
+from ops.os_operation import mkdir,functToDeleteItems
 from ops.io_utils import download_file
 from ops.pdb_utils import count_atom_line,filter_chain_cif,cif2pdb,filter_chain_pdb,count_residues
 from ops.fasta_searchdb import download_pdb
@@ -68,6 +68,7 @@ def fasta2pool(params,save_path):
                 database = split_info[0]
                 pdb_id = split_info[1]
                 candidate_list.append([database,pdb_id])
+        find_flag=False
         for candidate in candidate_list:
             database,pdb_id=candidate
             if database=="PDB":
@@ -76,12 +77,20 @@ def fasta2pool(params,save_path):
                 actual_structure_length = count_residues(final_pdb_path)
                 if actual_structure_length>=expected_seq_length and \
                         actual_structure_length<=len(chain_dict[chain_name_list.replace("-",",")]):
+                    find_flag=True
                     break
+                else:
+                    functToDeleteItems(current_chain_dir)
+                    os.remove(final_pdb_path)
             else:
                 #alphafold db
                 download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb"%pdb_id
                 download_file(download_link,final_pdb_path)
+                find_flag=True
                 break
+        if find_flag is False:
+            database,pdb_id=candidate_list[0]
+            download_pdb(pdb_id,current_chain_dir,final_pdb_path)
         final_chain_list = chain_name_list.split("-")
         fitting_dict[final_pdb_path]=final_chain_list
     print("collecting finish: fitting dict: ",fitting_dict)

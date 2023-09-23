@@ -80,6 +80,7 @@ def fasta_searchdb(params,save_path):
     #merge only identical chains, otherwise, rely on combine search
     for key in exp_match_dict:
         current_match_list = exp_match_dict[key]
+        print("match candidate:",key,current_match_list)
         for k in range(len(current_match_list)):
             match_id, evalue = current_match_list[k]
             if evalue==0:
@@ -121,11 +122,15 @@ def fasta_searchdb(params,save_path):
                     print("warning, query %s can not find any templates in database"%tmp_key)
 
         for key in expaf_match_dict:
+            closest_choice=None
+            num_res_difference=999999999
             current_match_list = exp_match_dict[key]
+            print("match candidate:",key,current_match_list)
             for k in range(len(current_match_list)):
                 match_id, evalue = current_match_list[k]
                 if "AFDB" in match_id:
                     matched_dict[key]=match_id
+
                     break
                 else:
                     expected_seq_length = len(chain_dict[key])*params['search']['length_ratio']
@@ -135,6 +140,9 @@ def fasta_searchdb(params,save_path):
                     final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
                     download_pdb(match_id,current_chain_dir,final_pdb_path)
                     actual_structure_length = count_residues(final_pdb_path)
+                    if abs(actual_structure_length-len(chain_dict[key]))<num_res_difference:
+                        num_res_difference =abs(actual_structure_length-len(chain_dict[key]))
+                        closest_choice = match_id
                     if actual_structure_length>=expected_seq_length  and actual_structure_length<=len(chain_dict[key]):
                         matched_dict[key]="PDB:"+match_id
                         final_chain_list = chain_name_list.split("-")
@@ -143,7 +151,9 @@ def fasta_searchdb(params,save_path):
                     else:
                         os.remove(final_pdb_path)
                         functToDeleteItems(current_chain_dir)
-
+            if key not in matched_dict:
+                matched_dict[key]="PDB:"+closest_choice
+                print("we have no better choice but pick %s with %d residues differences"%(closest_choice,num_res_difference))
     print("DB search finished! Match relationship ",matched_dict)
     #get the matched dict
 
