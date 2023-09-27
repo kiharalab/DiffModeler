@@ -29,6 +29,7 @@ def infer_diffem(input_map_path,save_dir,params):
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
+        pin_memory=True,
         batch_size=params['model']['batch_size'],
         num_workers=params['model']['num_workers'],
         drop_last=False)
