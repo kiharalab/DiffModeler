@@ -18,6 +18,7 @@ def argparser():
     parser.add_argument("--contour",type=float,default=0,help="Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0")
     parser.add_argument('--fast',  action='store_true', help="Specify where to use fast version or not")
     parser.add_argument("--seq_search",action='store_true',help="only search sequence against db, for server usage")
+    parser.add_argument("--af_only",action='store_true',help="only search sequence against AlphaFold db, for benchmark usage")
     args = parser.parse_args()
     # remove comments starting with '//'
     json_str = ''

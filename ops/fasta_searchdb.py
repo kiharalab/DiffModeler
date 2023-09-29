@@ -71,15 +71,18 @@ def fasta_searchdb(params,save_path):
     write_all_fasta(chain_dict,fasta_path)
 
     #first do experimental database search
-    output_path = os.path.join(single_chain_pdb_dir,"exp_search.out")
-    search_command = "blastp -query %s -db %s -out %s -num_threads %d"%(fasta_path,params['db_exp_path'],
-                                                                        output_path, params['search_thread'])
-    os.system(search_command)
-
+    if not params['af_only']:
+        output_path = os.path.join(single_chain_pdb_dir,"exp_search.out")
+        search_command = "blastp -query %s -db %s -out %s -num_threads %d"%(fasta_path,params['db_exp_path'],
+                                                                            output_path, params['search_thread'])
+        os.system(search_command)
+        exp_match_dict = parse_blast_output(output_path)
+    else:
+        exp_match_dict = {}#empty dict
     matched_dict = {}#[key]: chain id list, [value]: the structure id
     fitting_dict={}
     #parse the information
-    exp_match_dict = parse_blast_output(output_path)
+
     #merge only identical chains, otherwise, rely on combine search
     for key in exp_match_dict:
         current_match_list = exp_match_dict[key]
@@ -136,6 +139,9 @@ def fasta_searchdb(params,save_path):
             expected_seq_length = len(chain_dict[key])*params['search']['length_ratio']
             for k in range(len(current_match_list)):
                 match_id, evalue = current_match_list[k]
+                if params['af_only']:
+                    if "AFDB" not in match_id:
+                        continue
                 if "AFDB" in match_id:
                     split_info = match_id.split(":")
                     database = split_info[0]
