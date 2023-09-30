@@ -165,7 +165,12 @@ def fasta_searchdb(params,save_path):
                 if abs(actual_structure_length-len(chain_dict[key]))<num_res_difference:
                     num_res_difference =abs(actual_structure_length-len(chain_dict[key]))
                     closest_choice = match_id
+
             if key not in matched_dict:
+                if params['af_only'] and closest_choice is None:
+                    #we can only pick the top 1 candidate
+                    match_id, evalue = current_match_list[0]
+                    closest_choice = match_id
                 if "AFDB" in closest_choice:
                     matched_dict[key]=closest_choice
                 else:
