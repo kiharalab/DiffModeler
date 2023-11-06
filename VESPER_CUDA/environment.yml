@@ -1,0 +1,20 @@
+name: vesper_cuda
+channels:
+  - nvidia
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.10
+  - cudatoolkit=11.8
+  - pip
+  - pytorch=2.0.1
+  - mrcfile
+  - numba
+  - numpy
+  - pyFFTW
+  - scipy
+  - tqdm
+  - scikit-learn
+  - pip:
+      - biopython
+      - BioTEMPy

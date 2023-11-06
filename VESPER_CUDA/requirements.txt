@@ -1,0 +1,9 @@
+numpy
+mrcfile
+numba
+pyFFTW
+scipy
+tqdm
+scikit-learn
+biopython
+BioTEMPy
