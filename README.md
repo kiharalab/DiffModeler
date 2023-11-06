@@ -35,20 +35,48 @@ Xiao Wang, Han Zhu, Genki Terashi & Daisuke Kihara. Protein Complex Structure Mo
 ### Input map+sequence: https://em.kiharalab.org/algorithm/DiffModeler(seq)
 
 ## Introduction
-Cryogenic electron microscopy (cryo-EM) has been widely employed in experimental settings to determine multi-chain protein complexes, but modeling accuracy greatly diminishes when resolution decreases. At intermediate resolutions of 5-10 Å, even template-based structure fitting presents significant challenges. To tackle this issue, we introduce DiffModeler, a fully automated protein complex structure modeling method that leverages a diffusion model for backbone tracing and structure fitting with AlphaFold predicted single-chain structure. In extensive testing on cryo-EM maps at intermediate resolution, DiffModeler showcased remarkably accurate structure modeling, surpassing existing methods significantly. Notably, we successfully modeled a protein complex consisting of 47 chains, comprising 13,462 residues, with an impressive TM-Score of 0.9. We also further benchmarked DiffModeler for maps at low resolution of 10-20 Å and validated its generalizability with plausible performances. 
+
+<details>
+   <summary>DiffModeler is a computational tool using a diffusion model to automatically build full protein complex structure from cryo-EM maps at 0-20A resolution. </summary>
+
+Cryogenic electron microscopy (cryo-EM) has been widely employed in experimental settings to determine 
+multi-chain protein complexes, but modeling accuracy greatly diminishes when resolution 
+decreases. At intermediate resolutions of 5-10 Å, even template-based structure fitting presents
+significant challenges. To tackle this issue, we introduce DiffModeler, a fully automated protein complex structure modeling
+method that leverages a diffusion model for backbone tracing and structure fitting with AlphaFold predicted single-chain structure.
+In extensive testing on cryo-EM maps at intermediate resolution, DiffModeler showcased remarkably accurate
+structure modeling, surpassing existing methods significantly. 
+Notably, we successfully modeled a protein complex consisting of 47 chains,
+comprising 13,462 residues, with an impressive TM-Score of 0.9. 
+We also further benchmarked DiffModeler for maps at low resolution of 10-20 Å and 
+validated its generalizability with plausible performances. 
+</details>
 
 ## Overall Protocol 
-1) Backbone tracing from cryo-EM maps at intermediate resolution via diffusion model. 
-2) Single-chain structure prediction by AlphaFold. 
-3) Single-chain structure fitting using VESPER. 
-4) Protein complex modeling by assembling algorithms. 
 
-## Pre-required software
-### Required 
-Python 3 : https://www.python.org/downloads/   
-### Optional
-Pymol (for structure visualization): https://pymol.org/2/    
-Chimera (for map visualization): https://www.cgl.ucsf.edu/chimera/download.html  
+<details>
+
+1) Backbone tracing from cryo-EM maps at intermediate resolution via diffusion model.  
+2) Single-chain structure prediction by AlphaFold.  
+3) Single-chain structure fitting using VESPER.  
+4) Protein complex modeling by assembling algorithms.  
+
+<p align="center">
+  <img src="framework.png" alt="DiffModeler framework" width="70%">
+</p>
+</details>
+
+## Installation
+
+<details>
+
+
+
+### System Requirements
+CPU: >=4 cores <br>
+Memory (RAM): >=12Gb. <br>
+GPU: any GPU supports CUDA with at least 12GB memory. <br>
+GPU is required for DiffModeler since most computations are done on GPU.
 
 ## Installation  
 ### 1. [`Install git`](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) 
@@ -86,14 +114,24 @@ cd ..
 
 If the link failed, you can also download our model files via our [lab server](https://kiharalab.org/emsuites/diffmodeler_model/) to ``best_model`` directory. 
 
-## Usage
+### 5. (Optional) Visualization software
+Pymol (for structure visualization): https://pymol.org/2/    
+Chimera (for map visualization): https://www.cgl.ucsf.edu/chimera/download.html  
+
+</details>
+
+# Usage
+
+<details>
+<summary>Command Parameters</summary>
+
 ```commandline
 usage: main.py [-h] --mode MODE [-F F] [-M M] [--config CONFIG] [--gpu GPU] [--output OUTPUT]
                [--contour CONTOUR]
 
 options:
   -h, --help            show this help message and exit
-  --mode MODE           control mode
+  --mode MODE           control mode, mode 0: template mode; mode 1: sequence mode (online search); mode 2: sequence mode (local db search)
   -F F                  input map path
   -P P                  directory or zipped file of Single-Chain PDB files
   -M M                  txt file path which records protein information
@@ -104,8 +142,12 @@ options:
   --output OUTPUT       Output directory
   --contour CONTOUR     Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0
 ```
-## Run DiffModeler with three different modes
-### 1. Protein Structure Complex Modeling with provided template
+</details>
+
+<details>
+<summary>Protein Structure Complex Modeling with provided template</summary>
+
+### Protein Structure Complex Modeling with provided template 
 This is for DiffModeler running if you have map and available template candiates (either from experimental or AlphaFold predicted structure).
 It is fine to run if you only know some of the template structures..
 ```commandline
@@ -135,8 +177,12 @@ You can also use this command line to specify the zip file including all single-
 ```commandline
 python3 main.py --mode=0 -F=example/6824.mrc -P=example/6824.zip -M=example/input_info.txt --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
+</details>
 
-### 2. Protein Structure Complex Modeling with sequence (EBI-search)
+<details>
+<summary>Protein Structure Complex Modeling with sequence (EBI-search)</summary>
+
+### Protein Structure Complex Modeling with sequence (EBI-search)
 This is for DiffModeler running if you have map and corresponding sequence. It is fine to run if you only know some of the sequences.
 <br><b>Please use our [server](https://em.kiharalab.org/algorithm/DiffModeler(seq)) if with more than 4 non-identical chains. </b> EBI's API is too slow to respond when you have many non-identical sequences. <br>
 This mode can only support structure modeling with less than 4 non-identical chains because of EBI's search tool limit.
@@ -163,13 +209,17 @@ For ID line, please only include the chain id without any other information. If 
 ```commandline
 python3 main.py --mode=1 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
+</details>
 
-### 3. Protein Structure Complex Modeling with sequence (Local Sequence Database)
+<details>
+<summary>Protein Structure Complex Modeling with sequence (Local Sequence Database)</summary>
+
+### Protein Structure Complex Modeling with sequence (Local Sequence Database)
 This is for DiffModeler running if you have map and corresponding sequence. It is fine to run if you only know some of the sequences. If you have more 4 non-identical chains, you can set up local sequence database to run DiffModeler by yourself.
 <br><b>This is the mode used in server. We highly recommend to directly user [server](https://em.kiharalab.org/algorithm/DiffModeler(seq)) </b>
-### 3.1 Install Blast
+### 1 Install Blast
 Please follow the instructions in [NCBI website](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html) to install Blast locally.
-### 3.2 Download and install database
+### 2 Download and install database
 Download the processed database from https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/tree/main.
 You can also use command line
 ```commandline
@@ -179,7 +229,7 @@ wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data
 ```
 After downloading finished, unzip the database to ``data`` subdirectory under this project.
 
-### 3.3 Run DiffModeler
+### 3 Run DiffModeler
 After configuring the environment, please run 
 ```commandline
 python3 main.py --mode=2 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
@@ -190,7 +240,12 @@ python3 main.py --mode=2 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config
 python3 main.py --mode=2 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
 ```
 
+</details>
+
 ## Example
+
+<details>
+
 ### Input File
 Cryo-EM map with mrc format. 
 AlphaFold/Template single-chain structure and information file to indicate the path.
@@ -200,5 +255,4 @@ Our example input can be found [here](https://github.com/kiharalab/DiffModeler/t
 DiffModeler.cif: a CIF file that records the final modeled protein complex structure.
 Our example output can be found [here](https://kiharalab.org/emsuites/diffmodelder_example/output). All the intermediate results are also kept here. 
 
-## Benchmark Dataset
-All input of the benchmarked datasets are maintained [here](https://kiharalab.org/emsuites/diffmodelder_benchmark)
+</details>
