@@ -235,6 +235,18 @@ After configuring the environment, please run
 python3 main.py --mode=2 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
 [Map_Path] is the path of the input experimental cryo-EM map, [fasta_path] specifis the path of sequence file with .fasta format. [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
+
+Example of fasta file
+```
+>A,B,C,D
+MATPAGRRASETERLLTPNPGYGTQVGTSPAPTTPTEEEDLRR
+>E,F
+VVTFREENTIAFRHLFLLGYSDGSDDTFAAYTQEQLYQ
+```
+For ID line, please only include the chain id without any other information. If multiple chains include the identical sequences, please use comma "," to split different chains.
+<br> In this example, we have 6 chains in total, with A,B,C,D share the identical sequences and E,F share another identical sequences.
+
+
 ### Example Command
 ```commandline
 python3 main.py --mode=2 -F=example/6824.mrc -P=example/6824.fasta --config=config/diffmodeler.json --contour=2 --gpu=0 --resolution=5.8
