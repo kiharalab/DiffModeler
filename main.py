@@ -100,7 +100,8 @@ if __name__ == "__main__":
     if len(fitting_dict)==0:
         print("Empty Template candiate, DiffModeler can not run!!!")
         exit()
-
+    running_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(running_dir)
     #diffusion inference
     diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
 
