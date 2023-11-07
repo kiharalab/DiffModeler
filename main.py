@@ -102,8 +102,12 @@ if __name__ == "__main__":
         exit()
     running_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(running_dir)
-    if os.path.isabs(params['model']['path']):
+    if not os.path.isabs(params['model']['path']):
         params['model']['path'] =os.path.join(running_dir,params['model']['path'])
+    if not os.path.isabs(params['db_exp_path']):
+        params['db_exp_path'] = os.path.join(running_dir,params['db_exp_path'])
+    if not os.path.isabs(params['db_path']):
+        params['db_path'] = os.path.join(running_dir,params['db_path'])
     #diffusion inference
     diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
 
