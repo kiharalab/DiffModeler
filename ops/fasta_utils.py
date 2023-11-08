@@ -25,6 +25,7 @@ def read_fasta(input_fasta_path):
                             if tmp_chain_name not in use_set:
                                 final_id+=tmp_chain_name+","
                                 use_set.add(tmp_chain_name)
+                                break
                     elif len(tmp_item)==1:
                         final_id+=tmp_item+","
                         use_set.add(tmp_item)
