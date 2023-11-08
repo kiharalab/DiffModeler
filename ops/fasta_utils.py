@@ -9,14 +9,26 @@ def read_fasta(input_fasta_path):
 
     tmp_chain_list=[chr(i) for i in range(ord('A'), ord('Z') + 1)]  # uppercase letters
     tmp_chain_list.extend([chr(i) for i in range(ord('a'), ord('z') + 1)])  # lowercase letters
-
+    use_set=set()
     with open(input_fasta_path,'r') as file:
         for line in file:
             if line[0]==">":
                 current_id = line.strip("\n")
                 current_id = current_id.replace(">","")
                 current_id = current_id.replace(" ","")
-
+                #for users who do not follow our formats
+                split_id_list = current_id.split(",")
+                final_id=""
+                for tmp_item in split_id_list:
+                    if len(tmp_item)>1:
+                        for tmp_chain_name in tmp_chain_list:
+                            if tmp_chain_name not in use_set:
+                                final_id+=tmp_chain_name+","
+                                use_set.add(tmp_chain_name)
+                    elif len(tmp_item)==1:
+                        final_id+=tmp_item+","
+                        use_set.add(tmp_item)
+                current_id =final_id[:-1]#remove last ","
             else:
                 line=line.strip("\n").replace(" ","")
                 for item in line:
