@@ -34,7 +34,8 @@ def set_up_envrionment(params):
         mkdir(save_path)
     try:
         print("pre-compile VESPER to accelerate!")
-        os.system("python -O -m compileall VESPER_CUDA")
+        running_dir = os.path.dirname(os.path.abspath(__file__))
+        os.system(f"cd {running_dir}; python -O -m compileall VESPER_CUDA")
     except:
         print("pre-compile VESPER failed! No impact to main scripts!")
     save_path = os.path.abspath(save_path)
@@ -83,7 +84,14 @@ def construct_single_chain_candidate(params,save_path):
 if __name__ == "__main__":
     params = argparser()
     save_path,cur_map_path = set_up_envrionment(params)
-
+    running_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(running_dir)
+    if not os.path.isabs(params['model']['path']):
+        params['model']['path'] =os.path.join(running_dir,params['model']['path'])
+    if not os.path.isabs(params['db_exp_path']):
+        params['db_exp_path'] = os.path.join(running_dir,params['db_exp_path'])
+    if not os.path.isabs(params['db_path']):
+        params['db_path'] = os.path.join(running_dir,params['db_path'])
     if params['mode']==0:
         #first build a dict from the input text configure file
         fitting_dict = construct_single_chain_candidate(params,save_path)
@@ -103,14 +111,7 @@ if __name__ == "__main__":
     if len(fitting_dict)==0:
         print("Empty Template candiate, DiffModeler can not run!!!")
         exit()
-    running_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(running_dir)
-    if not os.path.isabs(params['model']['path']):
-        params['model']['path'] =os.path.join(running_dir,params['model']['path'])
-    if not os.path.isabs(params['db_exp_path']):
-        params['db_exp_path'] = os.path.join(running_dir,params['db_exp_path'])
-    if not os.path.isabs(params['db_path']):
-        params['db_path'] = os.path.join(running_dir,params['db_path'])
+
     #diffusion inference
     diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
 
