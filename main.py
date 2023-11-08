@@ -42,7 +42,10 @@ def set_up_envrionment(params):
     cur_map_path = Unify_Map(cur_map_path,os.path.join(save_path,map_name+"_unified.mrc"))
     from data_processing.Resize_Map import Resize_Map
     cur_map_path = Resize_Map(cur_map_path,os.path.join(save_path,map_name+".mrc"))
-    return save_path,cur_map_path
+    from modeling.map_utils import segment_map
+    new_map_path = os.path.join(save_path,map_name+"_segment.mrc")
+    segment_map(cur_map_path,new_map_path,contour=0)
+    return save_path,new_map_path
 
 def diffusion_trace_map(save_path,cur_map_path,params):
     if params['resolution']>=2:
