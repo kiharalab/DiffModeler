@@ -220,15 +220,12 @@ This is for DiffModeler running if you have map and corresponding sequence. It i
 ### 1 Install Blast
 Please follow the instructions in [NCBI website](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html) to install Blast locally.
 ### 2 Download and install database
-Download the processed database from https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/tree/main.
+Download the processed database from https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/tree/main and unzip them to ```data``` directory.
 You can also use command line
 ```commandline
 wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.aa
 wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.ab
 wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.ac
-```
-After downloading finished, unzip the database to ``data`` subdirectory under this project with following command
-```commandline
 cat data.tar.gz.aa data.tar.gz.ab data.tar.gz.ac >data.tar.gz
 tar -xzvf data.tar.gz
 ```
