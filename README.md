@@ -227,8 +227,11 @@ wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data
 wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.ab
 wget https://huggingface.co/datasets/zhtronics/BLAST_RCSB_AFDB/resolve/main/data.tar.gz.ac
 ```
-After downloading finished, unzip the database to ``data`` subdirectory under this project.
-
+After downloading finished, unzip the database to ``data`` subdirectory under this project with following command
+```commandline
+cat data.tar.gz.aa data.tar.gz.ab data.tar.gz.ac >data.tar.gz
+tar -xzvf data.tar.gz
+```
 ### 3 Run DiffModeler
 After configuring the environment, please run 
 ```commandline
