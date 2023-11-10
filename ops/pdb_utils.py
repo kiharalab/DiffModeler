@@ -128,52 +128,7 @@ def rename_chains(pdb_file, new_chain_name, output_file):
 #     io = MMCIFIO() #PDBIO()
 #     io.set_structure(structure)
 #     io.save(output_file)
-def rename_chains_cif(pdb_file,  new_chain_id,cif_file):
-    # Read the PDB file
-    with open(pdb_file, 'r') as f:
-        pdb_lines = f.readlines()
-
-    cif_lines = []
-    current_model = 0
-    atom_serial = 0
-
-    for line in pdb_lines:
-        if line.startswith('ATOM') or line.startswith('HETATM'):
-            x=float(line[30:38])
-            y=float(line[38:46])
-            z=float(line[46:54])
-            line = line[:21] + new_chain_id + line[22:30]+" %.3f %.3f %.3f "%(x,y,z)+line[54:]
-            atom_serial += 1
-            cif_lines.append(line)
-
-        # if line.startswith('ENDMDL'):
-        #     current_model += 1
-        #     atom_serial = 0
-
-    # Write the modified structure to a new CIF file
-    with open(cif_file, 'w') as f:
-        f.write("data_" + new_chain_id + "\n#\n")
-        # f.write("_audit_creation_method     'Diffusion Fitting'\n")
-        # f.write("_audit_creation_date       \n")
-        # f.write("_audit_author_name         'Xiao Wang'\n")
-        # f.write("_entry.id                   %s\n" % new_chain_id)
-        # f.write("\n")
-        f.write("loop_\n")
-        f.write("_atom_site.group_PDB\n")
-        f.write("_atom_site.id\n")
-        f.write("_atom_site.label_atom_id\n")
-        f.write("_atom_site.label_comp_id\n")
-        f.write("_atom_site.label_asym_id\n")
-        f.write("_atom_site.label_seq_id\n")
-        f.write("_atom_site.Cartn_x\n")
-        f.write("_atom_site.Cartn_y\n")
-        f.write("_atom_site.Cartn_z\n")
-        f.write("_atom_site.occupancy\n")
-        f.write("_atom_site.B_iso_or_equiv\n")
-        f.write("_atom_site.type_symbol\n")
-
-        for line in cif_lines:
-            f.write(line)
+from modeling.pdb_utils import rename_chains_cif as rename_chains_cif
 def rename_chains_naive(pdb_file_path, new_chain_name, output_file_path):
     with open(pdb_file_path, 'r') as f:
         lines = f.readlines()
