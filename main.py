@@ -30,7 +30,7 @@ def set_up_envrionment(params):
         save_path,map_name = init_save_path(cur_map_path)
     else:
         save_path=params['output']
-        map_name="input"
+        map_name="input_diffmodeler" #to avoid server same name bugs
         mkdir(save_path)
     try:
         print("pre-compile VESPER to accelerate!")
