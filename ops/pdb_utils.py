@@ -128,7 +128,7 @@ def rename_chains(pdb_file, new_chain_name, output_file):
 #     io = MMCIFIO() #PDBIO()
 #     io.set_structure(structure)
 #     io.save(output_file)
-from modeling.pdb_utils import rename_chains_cif as rename_chains_cif
+#from modeling.pdb_utils import rename_chains_cif as rename_chains_cif
 def rename_chains_naive(pdb_file_path, new_chain_name, output_file_path):
     with open(pdb_file_path, 'r') as f:
         lines = f.readlines()
