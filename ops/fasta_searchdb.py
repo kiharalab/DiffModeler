@@ -15,6 +15,13 @@ def parse_blast_output(blast_file):
                 line =line.strip("\n")
                 line = line.replace("Query=","")
                 current_id = line.replace(" ","")
+                #check if following line still have some thing
+                next_line_index = line_index+1
+                while len(all_lines[next_line_index].strip("\n").replace(" ",""))!=0:
+                    new_line = all_lines[next_line_index].strip("\n").replace(" ","")
+                    current_id += new_line
+                    next_line_index+=1
+                print("parse blast id:",current_id)
             elif line.startswith("Sequences producing significant"):
                 read_flag=True
                 continue
