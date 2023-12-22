@@ -38,7 +38,7 @@ def merge_diffusion_map(input_map_path,input_map_data, cur_box_path,output_dir,C
         cur_prediction = np.load(cur_pred_path)
         output_box[:,x_start:x_end,y_start:y_end,z_start:z_end]=\
             np.maximum(output_box[:,x_start:x_end,y_start:y_end,z_start:z_end],
-                       cur_prediction[:x_end-x_start,:y_end-y_start,:z_end-z_start])
+                       cur_prediction[:,:x_end-x_start,:y_end-y_start,:z_end-z_start])
     for k in range(len(output_box)):
         cur_save_path=os.path.join(output_dir,save_key+"_c%d.mrc"%k)
         save_label_map(input_map_path,cur_save_path,output_box[k])
