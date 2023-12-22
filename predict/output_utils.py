@@ -12,19 +12,28 @@ def merge_diffusion_map(input_map_path,input_map_data, cur_box_path,output_dir,C
     for k in range(len(Coord_Box)):
 
         x_start, y_start, z_start = Coord_Box[k]
-        x_end,y_end,z_end = x_start+box_size,y_start+box_size,z_start+box_size
+        x_end = min(x_start + box_size, scan_x)
+        y_end = min(y_start+box_size,scan_y)
+        z_end = min(z_start+box_size,scan_z)
+
         if x_end < scan_x:
             x_start = x_start
         else:
             x_start = x_end - box_size
+            if x_start<0:
+                x_start=0
         if y_end < scan_y:
             y_start = y_start
         else:
             y_start = y_end - box_size
+            if y_start<0:
+                y_start=0
         if z_end < scan_z:
             z_start = z_start
         else:
             z_start = z_end - box_size
+            if z_start<0:
+                z_start=0
         cur_pred_path = os.path.join(cur_box_path,"Predict_%d.npy"%k)
         cur_prediction = np.load(cur_pred_path)
         output_box[:,x_start:x_end,y_start:y_end,z_start:z_end]=np.maximum(output_box[:,x_start:x_end,y_start:y_end,z_start:z_end],cur_prediction)
