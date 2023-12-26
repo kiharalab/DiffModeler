@@ -88,5 +88,9 @@ def extract_compressed_file(file_path, extract_dir):
     else:
         print("Unsupported zipped file format %s"%file_path)
         return
-
+    listfiles=os.listdir(extract_dir)
+    tmp_dir=os.path.join(extract_dir,listfiles[0])
+    if os.path.isdir(tmp_dir):
+        extract_dir=tmp_dir
     print(f"Successfully extracted {file_path} to {extract_dir}")
+    return extract_dir

@@ -70,7 +70,7 @@ def construct_single_chain_candidate(params,save_path):
     if not os.path.isdir(single_chain_pdb_input):
         single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
         from ops.os_operation import extract_compressed_file
-        extract_compressed_file(single_chain_pdb_input,single_chain_pdb_dir)
+        single_chain_pdb_dir=extract_compressed_file(single_chain_pdb_input,single_chain_pdb_dir)
 
     else:
         from ops.os_operation import copy_directory
