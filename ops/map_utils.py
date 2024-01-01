@@ -348,5 +348,5 @@ def increase_map_density(input_path,output_path,add_contour):
         data=mrc.data
         data=np.float32(data)
     data = data+add_contour
-    save_dens_map(output_path,data,add_contour)
+    save_dens_map(output_path,data,input_path)
     return output_path
