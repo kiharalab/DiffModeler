@@ -73,21 +73,20 @@ def fasta2pool(params,save_path):
             database,pdb_id=candidate
             if database=="PDB":
                 download_pdb(pdb_id,current_chain_dir,final_pdb_path)
-                expected_seq_length = len(chain_dict[chain_name_list.replace("-",",")])*params['search']['length_ratio']
-                actual_structure_length = count_residues(final_pdb_path)
-                if actual_structure_length>=expected_seq_length and \
-                        actual_structure_length<=len(chain_dict[chain_name_list.replace("-",",")]):
-                    find_flag=True
-                    break
-                else:
-                    functToDeleteItems(current_chain_dir)
-                    os.remove(final_pdb_path)
+
             else:
                 #alphafold db
                 download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb"%pdb_id
                 download_file(download_link,final_pdb_path)
+            expected_seq_length = len(chain_dict[chain_name_list.replace("-",",")])*params['search']['length_ratio']
+            actual_structure_length = count_residues(final_pdb_path)
+            if actual_structure_length>=expected_seq_length and \
+                    actual_structure_length<=len(chain_dict[chain_name_list.replace("-",",")]):
                 find_flag=True
                 break
+            else:
+                functToDeleteItems(current_chain_dir)
+                os.remove(final_pdb_path)
         if find_flag is False:
             database,pdb_id=candidate_list[0]
             download_pdb(pdb_id,current_chain_dir,final_pdb_path)
