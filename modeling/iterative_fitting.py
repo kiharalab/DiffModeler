@@ -50,6 +50,22 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
         mkdir(current_output_dir)
         print("score %.2f: 1st global refinment!"%(current_score))
         new_score_dict=fit_single_chain(diff_ldpmap_path,current_fitpdb_path,current_output_dir,map_ldp_pdb_path,params,global_mode=1)
+        #clean the global refitting to remove any structure
+        unclean_global_score_dict = new_score_dict
+        #check all fitting  structure and clean overlap
+        #in principle should no such overlap cases, but may happen in some severe conditions
+        clash_distance= params['assembling']['clash_distance']
+        ratio_cutoff = params['assembling']['overlap_ratio_limit']
+        for key in chain_visit_dict:
+            if chain_visit_dict[key]==1:
+                previous_fit_dir = os.path.join(modeling_dir,"iterative_%s"%key)
+                previous_fit_pdb = os.path.join(previous_fit_dir,"final.pdb")
+                new_score_dict = remove_overlap_pdb(new_score_dict,previous_fit_pdb,clash_distance,ratio_cutoff)
+        if len(new_score_dict)>0:
+            new_score_dict=sort_dict_by_value_desc(new_score_dict)#if still remain satisfied, pick the remained top1
+        else:
+            new_score_dict=unclean_global_score_dict
+        print("global fitting cleaning remains %d/%d"%(len(new_score_dict),len(unclean_global_score_dict)))
         current_file_name=list(new_score_dict.keys())[0]
         current_key = current_file_name#it is actually a path
         current_fitpdb_path = os.path.join(current_output_dir,"top1.pdb")
