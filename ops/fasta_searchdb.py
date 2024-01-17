@@ -32,7 +32,7 @@ def parse_blast_output(blast_file):
                     match_id = line[0]
                     score = float(line[-1])
                     match_dict[current_id].append([match_id,score])
-                    for k in range(1,30):
+                    for k in range(1,200):
                         new_line=all_lines[k+line_index]
                         new_line = new_line.strip("\n").split()
                         try:
@@ -165,7 +165,7 @@ def fasta_searchdb(params,save_path):
                         matched_dict[key]="PDB:"+match_id
                     final_chain_list = chain_name_list.split("-")
                     fitting_dict[final_pdb_path]=final_chain_list
-                    break
+                    break #already in match dict, not need to check any more
                 else:
                     os.remove(final_pdb_path)
                     functToDeleteItems(current_chain_dir)
