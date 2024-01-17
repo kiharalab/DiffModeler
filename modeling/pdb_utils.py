@@ -104,12 +104,15 @@ def find_chain_pdb_path(fit_dict,query_chain):
     return None
 import torch
 
-def remove_overlap_pdb(score_dict,fitted_pdb,clash_distance=3,ratio_cutoff=0.05):
+def remove_overlap_pdb(score_dict,fitted_pdb,clash_distance=3,ratio_cutoff=0.05,split_key=True):
     new_score_dict= {}
     current_atom_locations= extract_residue_locations(fitted_pdb)
     current_atom_locations = torch.from_numpy(current_atom_locations).cuda()
     for key in score_dict:
-        current_pdb_path = key.split(",")[1]
+        if split_key==False:
+            current_pdb_path = key
+        else:
+            current_pdb_path = key.split(",")[1]
         query_atom_locations = extract_residue_locations(current_pdb_path)
         query_atom_locations = torch.from_numpy(query_atom_locations).cuda()
         distance_array = torch.cdist(query_atom_locations,current_atom_locations, p=2)

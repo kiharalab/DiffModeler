@@ -49,7 +49,8 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
         current_output_dir = os.path.join(modeling_dir,"globalsearch_%s"%current_assign_chain)
         mkdir(current_output_dir)
         print("score %.2f: 1st global refinment!"%(current_score))
-        new_score_dict=fit_single_chain(diff_ldpmap_path,current_fitpdb_path,current_output_dir,map_ldp_pdb_path,params,global_mode=1)
+        new_score_dict=fit_single_chain(diff_ldpmap_path,current_fitpdb_path,
+                                        current_output_dir,map_ldp_pdb_path,params,global_mode=1)
         #clean the global refitting to remove any structure
         unclean_global_score_dict = new_score_dict
         #check all fitting  structure and clean overlap
@@ -60,7 +61,9 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
             if chain_visit_dict[key]==1:
                 previous_fit_dir = os.path.join(modeling_dir,"iterative_%s"%key)
                 previous_fit_pdb = os.path.join(previous_fit_dir,"final.pdb")
-                new_score_dict = remove_overlap_pdb(new_score_dict,previous_fit_pdb,clash_distance,ratio_cutoff)
+                new_score_dict = remove_overlap_pdb(new_score_dict,previous_fit_pdb,clash_distance,ratio_cutoff,split_key=False)
+                if len(new_score_dict)<=0:
+                    break
         if len(new_score_dict)>0:
             new_score_dict=sort_dict_by_value_desc(new_score_dict)#if still remain satisfied, pick the remained top1
         else:
@@ -87,7 +90,8 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     final_pdb_output = os.path.join(current_output_dir,"final.pdb")
     if not global_refit_flag:
         #for local fitting using map
-        new_score_dict = fit_single_chain(segment_map_path,current_fitpdb_path,current_output_dir,map_ldp_pdb_path,params,global_mode=0)
+        new_score_dict = fit_single_chain(segment_map_path,current_fitpdb_path,
+                                          current_output_dir,map_ldp_pdb_path,params,global_mode=0)
         current_file_name=list(new_score_dict.keys())[0]
         new_score = new_score_dict[current_file_name]
         new_score = new_score+chain_length_score[current_assign_chain]
