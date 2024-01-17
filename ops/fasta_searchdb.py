@@ -32,7 +32,7 @@ def parse_blast_output(blast_file):
                     match_id = line[0]
                     score = float(line[-1])
                     match_dict[current_id].append([match_id,score])
-                    for k in range(1,200):
+                    for k in range(1,500):
                         new_line=all_lines[k+line_index]
                         new_line = new_line.strip("\n").split()
                         try:
