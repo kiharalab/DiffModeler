@@ -123,6 +123,26 @@ def remove_overlap_pdb(score_dict,fitted_pdb,clash_distance=3,ratio_cutoff=0.05,
         else:
             print("%s remove because of the overlap too big"%(key),ratio_close)
     return new_score_dict
+def calculate_overlap_score(score_dict,clash_dict,fitted_pdb,clash_distance=3,split_key=True):
+    current_atom_locations= extract_residue_locations(fitted_pdb)
+    current_atom_locations = torch.from_numpy(current_atom_locations).cuda()
+
+    for key in score_dict:
+        if split_key==False:
+            current_pdb_path = key
+        else:
+            current_pdb_path = key.split(",")[1]
+        query_atom_locations = extract_residue_locations(current_pdb_path)
+        query_atom_locations = torch.from_numpy(query_atom_locations).cuda()
+        distance_array = torch.cdist(query_atom_locations,current_atom_locations, p=2)
+        distance_array = torch.amin(distance_array,dim=1)
+        ratio_close = (distance_array < clash_distance).sum().item() / len(query_atom_locations)#len(distance_array[distance_array<=clash_distance])/len(query_atom_locations)
+        if key not in clash_dict:
+            clash_dict[key]=ratio_close
+        else:
+            clash_dict[key]+=ratio_close
+    return clash_dict
+
 def rename_chains_cif(pdb_file,  new_chain_id,cif_file):
     # Read the PDB file
     with open(pdb_file, 'r') as f:

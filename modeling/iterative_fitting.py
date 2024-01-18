@@ -1,7 +1,7 @@
 import os
 from ops.os_operation import mkdir
 from modeling.score_utils import sort_dict_by_value_desc,clean_score_dict,find_biggest_unvisited_chain
-from modeling.pdb_utils import find_identical_chain,find_chain_pdb_path,remove_overlap_pdb,rename_chains_cif
+from modeling.pdb_utils import find_identical_chain,find_chain_pdb_path,remove_overlap_pdb,rename_chains_cif,calculate_overlap_score
 from modeling.fit_structure_chain import fit_single_chain
 from modeling.map_utils import mask_map_by_pdb,segment_map,format_map
 from modeling.pdb_utils import extract_residue_locations
@@ -67,10 +67,19 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
         print("global fitting cleaning remains %d/%d"%(len(new_score_dict),len(unclean_global_score_dict)))
         if len(new_score_dict)>0:
             new_score_dict=sort_dict_by_value_desc(new_score_dict)#if still remain satisfied, pick the remained top1
+            current_file_name=list(new_score_dict.keys())[0]
         else:
             new_score_dict=unclean_global_score_dict
-
-        current_file_name=list(new_score_dict.keys())[0]
+            clash_dict={}
+            #calculate all the clashes and sum up them, pick the one with lowest sum clash score
+            for key in chain_visit_dict:
+                if chain_visit_dict[key]==1:
+                    previous_fit_dir = os.path.join(modeling_dir,"iterative_%s"%key)
+                    previous_fit_pdb = os.path.join(previous_fit_dir,"final.pdb")
+                    clash_dict=calculate_overlap_score(new_score_dict,clash_dict,previous_fit_pdb,clash_distance,split_key=False)
+            clash_dict=sort_dict_by_value_desc(clash_dict)
+            current_file_name=list(clash_dict.keys())[-1]
+            print("repicking, finding the mininum clash one with %f"%clash_dict[current_file_name])
         current_key = current_file_name#it is actually a path
         current_fitpdb_path = os.path.join(current_output_dir,"top1.pdb")
         shutil.copy(current_file_name,current_fitpdb_path)
