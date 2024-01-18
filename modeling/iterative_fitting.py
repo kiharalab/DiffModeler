@@ -64,11 +64,12 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
                 new_score_dict = remove_overlap_pdb(new_score_dict,previous_fit_pdb,clash_distance,ratio_cutoff,split_key=False)
                 if len(new_score_dict)<=0:
                     break
+        print("global fitting cleaning remains %d/%d"%(len(new_score_dict),len(unclean_global_score_dict)))
         if len(new_score_dict)>0:
             new_score_dict=sort_dict_by_value_desc(new_score_dict)#if still remain satisfied, pick the remained top1
         else:
             new_score_dict=unclean_global_score_dict
-        print("global fitting cleaning remains %d/%d"%(len(new_score_dict),len(unclean_global_score_dict)))
+
         current_file_name=list(new_score_dict.keys())[0]
         current_key = current_file_name#it is actually a path
         current_fitpdb_path = os.path.join(current_output_dir,"top1.pdb")

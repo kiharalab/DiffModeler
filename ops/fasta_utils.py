@@ -9,6 +9,7 @@ def read_fasta(input_fasta_path):
 
     tmp_chain_list=[chr(i) for i in range(ord('A'), ord('Z') + 1)]  # uppercase letters
     tmp_chain_list.extend([chr(i) for i in range(ord('a'), ord('z') + 1)])  # lowercase letters
+    tmp_chain_list+=['1','2','3','4','5','6','7','8','9','0']
     use_set=set()
     with open(input_fasta_path,'r') as file:
         for line in file:
