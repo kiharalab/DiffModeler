@@ -33,18 +33,19 @@ def read_fasta(input_fasta_path):
                                 final_id+=tmp_chain_name+","
                                 use_set.add(tmp_chain_name)
                                 break
-                        final_id+=tmp_item+","
-                        use_set.add(tmp_item)
+                        # final_id+=tmp_item+","
+                        # use_set.add(tmp_item)
                     else:
                         if tmp_item not in use_set:
                             final_id+=tmp_item+","
+                            use_set.add(tmp_item)
                         else:
                             for tmp_chain_name in tmp_chain_list:
                                 if tmp_chain_name not in use_set:
                                     final_id+=tmp_chain_name+","
                                     use_set.add(tmp_chain_name)
                                     break
-                        use_set.add(tmp_item)
+
                     # if len(tmp_item)==1:
                     #     for tmp_chain_name in tmp_chain_list:
                     #         if tmp_chain_name not in use_set:
@@ -64,7 +65,7 @@ def read_fasta(input_fasta_path):
                     #chain_dict[current_id].append(item)
                 if len(set(tmp_resid_list))>10:
                     #may not be protein residues, skip DNA/RNA/ligand
-                    chain_dict[current_id]=tmp_resid_list
+                    chain_dict[current_id]+=tmp_resid_list
     print("read chain info from fasta:",chain_dict)
     return chain_dict
 
