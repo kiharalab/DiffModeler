@@ -58,8 +58,13 @@ def read_fasta(input_fasta_path):
 
             else:
                 line=line.strip("\n").replace(" ","")
+                tmp_resid_list=[]
                 for item in line:
-                    chain_dict[current_id].append(item)
+                    tmp_resid_list.append(item)
+                    #chain_dict[current_id].append(item)
+                if len(set(tmp_resid_list))<=10:
+                    #may not be protein residues, skip DNA/RNA/ligand
+                    chain_dict[current_id]=tmp_resid_list
     print("read chain info from fasta:",chain_dict)
     return chain_dict
 
