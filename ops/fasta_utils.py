@@ -21,16 +21,37 @@ def read_fasta(input_fasta_path):
                 split_id_list = current_id.split(",")
                 final_id=""
                 for tmp_item in split_id_list:
-                    if len(tmp_item)>1:
+                    if len(tmp_item)>2:
                         for tmp_chain_name in tmp_chain_list:
                             if tmp_chain_name not in use_set:
                                 final_id+=tmp_chain_name+","
                                 use_set.add(tmp_chain_name)
                                 break
-                    elif len(tmp_item)==1:
                         final_id+=tmp_item+","
                         use_set.add(tmp_item)
-                current_id =final_id[:-1]#remove last ","
+                    else:
+                        if tmp_item not in use_set:
+                            final_id+=tmp_item+","
+                        else:
+                            for tmp_chain_name in tmp_chain_list:
+                                if tmp_chain_name not in use_set:
+                                    final_id+=tmp_chain_name+","
+                                    use_set.add(tmp_chain_name)
+                                    break
+                        use_set.add(tmp_item)
+                    # if len(tmp_item)==1:
+                    #     for tmp_chain_name in tmp_chain_list:
+                    #         if tmp_chain_name not in use_set:
+                    #             final_id+=tmp_chain_name+","
+                    #             use_set.add(tmp_chain_name)
+                    #             break
+                    # elif len(tmp_item)==1:
+                    #     final_id+=tmp_item+","
+                    #     use_set.add(tmp_item)
+                if len(final_id[-1])==0:
+                    current_id =final_id[:-1]#remove last ","
+                else:
+                    current_id=final_id
             else:
                 line=line.strip("\n").replace(" ","")
                 for item in line:
