@@ -27,8 +27,11 @@ def run_code_remote(command_line,save_dir):
     os.system(command_line)
     os.chdir(root_dir)
 import time
+import random
 def download_file(url,file):
     try:
+        rand_second=random.randint(1,10)
+        time.sleep(rand_second)
         import requests
         response = requests.get(url)
 
