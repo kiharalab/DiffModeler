@@ -5,6 +5,7 @@ from ops.pdb_utils import count_atom_line,filter_chain_cif,cif2pdb,filter_chain_
 from ops.fasta_utils import read_fasta,write_all_fasta
 from ops.io_utils import write_pickle,load_pickle
 from collections import defaultdict
+import time
 def parse_blast_output(blast_file):
     match_dict=defaultdict(list)
     read_flag=False
@@ -154,9 +155,13 @@ def fasta_searchdb(params,save_path):
                     database = split_info[0]
                     pdb_id = split_info[1]
                     download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb"%pdb_id
-                    download_file(download_link,final_pdb_path)
+                    download_flag=download_file(download_link,final_pdb_path)
+                    if download_flag is False:
+                        time.sleep(60)
+                        continue
                 else:
                     download_pdb(match_id,current_chain_dir,final_pdb_path)
+
                 actual_structure_length = count_residues(final_pdb_path)
                 if actual_structure_length>=expected_seq_length  and actual_structure_length<=len(chain_dict[key]):
                     if "AFDB" in match_id:
@@ -210,7 +215,10 @@ def fasta_searchdb(params,save_path):
         if database=="AFDB":
             #alphafold db
             download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb"%pdb_id
-            download_file(download_link,final_pdb_path)
+            download_flag=download_file(download_link,final_pdb_path)
+            if download_flag is False:
+                time.sleep(60)
+                continue
         else:
             download_pdb(pdb_id,current_chain_dir,final_pdb_path)
         final_chain_list = chain_name_list.split("-")
