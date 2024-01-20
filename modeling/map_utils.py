@@ -219,9 +219,9 @@ def format_map(input_map,output_map):
         mrc_new.header.nx = nx
         mrc_new.header.ny = ny
         mrc_new.header.nz = nz
-        mrc_new.header.nxstart = nxs
-        mrc_new.header.nystart = nys
-        mrc_new.header.nzstart = nzs
+        mrc_new.header.nxstart = 0#nxs
+        mrc_new.header.nystart = 0#nys
+        mrc_new.header.nzstart = 0#nzs
         mrc_new.header.mx = mx
         mrc_new.header.my = my
         mrc_new.header.mz = mz
@@ -234,3 +234,4 @@ def format_map(input_map,output_map):
         mrc.print_header()
         mrc_new.print_header()
         mrc_new.close()
+    return output_map

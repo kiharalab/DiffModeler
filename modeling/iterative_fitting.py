@@ -91,8 +91,9 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     current_output_dir = os.path.join(modeling_dir,"iterative_%s"%current_assign_chain)
     mkdir(current_output_dir)
     print("score %.2f: local refinment!"%(current_score))
-    segment_map_path0 = os.path.join(current_output_dir,"segment_map.mrc")
+    segment_map_path0 = os.path.join(current_output_dir,"segment_map_tmp.mrc")
     mask_map_by_pdb(diff_trace_map,segment_map_path0,current_fitpdb_path,keep_label=True)
+    segment_map_path0 = format_map(segment_map_path0,os.path.join(current_output_dir,"segment_map.mrc"))
     segment_map_path = os.path.join(current_output_dir,"segment_map_small.mrc")
     segment_map(segment_map_path0,segment_map_path)
 
