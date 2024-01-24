@@ -4,6 +4,7 @@ from ops.io_utils import download_file
 from ops.pdb_utils import count_atom_line,filter_chain_cif,cif2pdb,filter_chain_pdb,count_residues
 from ops.fasta_searchdb import download_pdb
 def fasta2pool(params,save_path):
+    max_file_name_limit=250#default is 255, to be safe
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
     mkdir(single_chain_pdb_dir)
 
@@ -21,10 +22,10 @@ def fasta2pool(params,save_path):
     for chain_name_list in chain_dict:
         fasta_list = chain_dict[chain_name_list]
         chain_name_list = chain_name_list.replace(",","-")
-        final_pdb_path = os.path.join(final_pdb_dir,chain_name_list+".pdb")
+        final_pdb_path = os.path.join(final_pdb_dir,chain_name_list[:max_file_name_limit]+".pdb")
         if os.path.exists(final_pdb_path) and count_atom_line(final_pdb_path)>=50:
             continue
-        current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
+        current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list[:max_file_name_limit]))
         mkdir(current_chain_dir)
         input_fasta_path = os.path.join(current_chain_dir,"input.fasta")
         use_chain_name = chain_name_list.split("-")[0]
@@ -42,12 +43,12 @@ def fasta2pool(params,save_path):
     for chain_name_list in chain_dict:
 
         chain_name_list = chain_name_list.replace(",","-")
-        final_pdb_path = os.path.join(final_pdb_dir,chain_name_list+".pdb")
+        final_pdb_path = os.path.join(final_pdb_dir,chain_name_list[:max_file_name_limit]+".pdb")
         if os.path.exists(final_pdb_path) and count_atom_line(final_pdb_path)>=50:
             final_chain_list = chain_name_list.split("-")
             fitting_dict[final_pdb_path]=final_chain_list
             continue
-        current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
+        current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list[:max_file_name_limit]))
         listfiles = [x for x in os.listdir(current_chain_dir) if ".ids.txt" in x]
         if len(listfiles)==0:
             print("fail to find search results for chain %s"%chain_name_list)

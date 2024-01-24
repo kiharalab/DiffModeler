@@ -66,6 +66,7 @@ def download_pdb(pdb_id,current_chain_dir,final_pdb_path):
         filter_chain_pdb(pdb_file,chain_id,final_pdb_path)
     return final_pdb_path
 def fasta_searchdb(params,save_path):
+    max_file_name_limit=250#default is 255, to be safe
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
     mkdir(single_chain_pdb_dir)
     fitting_pickle_path = os.path.join(save_path,"fitting_dict.pkl")
@@ -101,9 +102,9 @@ def fasta_searchdb(params,save_path):
                 #fetch the pdb to see if the protein size really reasonable
                 expected_seq_length = len(chain_dict[key])*params['search']['length_ratio']
                 chain_name_list = key.replace(",","-")
-                current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
+                current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list)[:max_file_name_limit])
                 mkdir(current_chain_dir)
-                final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
+                final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list[:max_file_name_limit]+".pdb")
                 download_pdb(match_id,current_chain_dir,final_pdb_path)
                 actual_structure_length = count_residues(final_pdb_path)
                 if actual_structure_length>=expected_seq_length and actual_structure_length<=len(chain_dict[key]):
@@ -141,9 +142,9 @@ def fasta_searchdb(params,save_path):
             current_match_list = expaf_match_dict[key]
             print("match candidate:",key,current_match_list)
             chain_name_list = key.replace(",","-")
-            current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
+            current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list)[:max_file_name_limit])
             mkdir(current_chain_dir)
-            final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
+            final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list[:max_file_name_limit]+".pdb")
             expected_seq_length = len(chain_dict[key])*params['search']['length_ratio']
             for k in range(len(current_match_list)):
                 match_id, evalue = current_match_list[k]
@@ -200,9 +201,9 @@ def fasta_searchdb(params,save_path):
             continue
         matched_id = matched_dict[chain_name_list]
         chain_name_list = chain_name_list.replace(",","-")
-        current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list))
+        current_chain_dir = os.path.join(single_chain_pdb_dir,str(chain_name_list)[:max_file_name_limit])
         mkdir(current_chain_dir)
-        final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list+".pdb")
+        final_pdb_path = os.path.join(single_chain_pdb_dir,chain_name_list[:max_file_name_limit]+".pdb")
         if final_pdb_path in fitting_dict:
             continue
         if os.path.exists(final_pdb_path) and count_atom_line(final_pdb_path)>=50:
