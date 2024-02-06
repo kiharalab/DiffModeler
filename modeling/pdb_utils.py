@@ -165,7 +165,7 @@ def rename_chains_cif(pdb_file,  new_chain_id,cif_file):
             atom_type = line[12:16].replace(" ","")[0]
             new_line += atom_type+"\t"
             new_line += line[12:16]+"\t"
-            new_line += line[16]+"\t"
+            # new_line += line[16]+"\t"
             new_line += line[17:20]+"\t"
             new_line += new_chain_id+"\t"
             new_line += line[22:26]+"\t"
