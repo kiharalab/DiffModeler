@@ -6,7 +6,7 @@ def read_fasta(input_fasta_path):
     #sequence
     chain_dict=defaultdict(list)#key: chain_list, value: nuc sequence
     current_id=None
-
+    dna_rna_set= set(['A','U','T','C','G'])
     tmp_chain_list=[chr(i) for i in range(ord('A'), ord('Z') + 1)]  # uppercase letters
     tmp_chain_list.extend([chr(i) for i in range(ord('a'), ord('z') + 1)])  # lowercase letters
     tmp_chain_list+=['1','2','3','4','5','6','7','8','9','0']
@@ -63,7 +63,9 @@ def read_fasta(input_fasta_path):
                 for item in line:
                     tmp_resid_list.append(item)
                     #chain_dict[current_id].append(item)
-                if len(set(tmp_resid_list))>10:
+                tmp_resid_set = set(tmp_resid_list)
+                tmp_useful_set = tmp_resid_set-dna_rna_set
+                if len(tmp_useful_set)>10:
                     #may not be protein residues, skip DNA/RNA/ligand
                     chain_dict[current_id]+=tmp_resid_list
     print("read chain info from fasta:",chain_dict)
