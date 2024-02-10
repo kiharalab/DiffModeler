@@ -6,4 +6,5 @@ scipy
 tqdm
 scikit-learn
 biopython
-BioTEMPy
+pydssp
+gemmi

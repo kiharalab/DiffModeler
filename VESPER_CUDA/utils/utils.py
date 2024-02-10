@@ -11,17 +11,19 @@ def format_score_result(result, ave, std):
 
 
 def euler_to_mtx(ang):
-    # extrinsic rotation in xyz order or intrinsic rotation in zyx order
-    # ang: [alpha, beta, gamma]
+    """
+    Convert Euler angles to a rotation matrix.
 
+    Args:
+        ang: Euler angles [alpha, beta, gamma].
+
+    Returns:
+        torch.Tensor: Rotation matrix.
+
+    """
     import torch
 
-    cos_a = torch.cos(ang[0])
-    sin_a = torch.sin(ang[0])
-    cos_b = torch.cos(ang[1])
-    sin_b = torch.sin(ang[1])
-    cos_c = torch.cos(ang[2])
-    sin_c = torch.sin(ang[2])
+    (sin_a, sin_b, sin_c), (cos_a, cos_b, cos_c) = torch.sin(ang), torch.cos(ang)
     one = torch.ones_like(ang[0])
     zero = torch.zeros_like(ang[0])
 

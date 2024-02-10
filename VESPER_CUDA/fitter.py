@@ -4,13 +4,13 @@ from datetime import datetime
 from itertools import product
 
 import numpy as np
-
-from tqdm import tqdm
-
-from fileio import save_rotated_pdb, save_rotated_mrc, save_vec_as_pdb
+import torch
 from scipy.spatial.transform import Rotation as R
 from scipy.ndimage import laplace
-from utils import euler_to_mtx, get_score
+from tqdm import tqdm
+
+from utils.fileio import save_rotated_pdb, save_rotated_mrc, save_vec_as_pdb
+from utils.utils import euler_to_mtx, get_score
 
 
 class MapFitter:
@@ -463,7 +463,7 @@ class MapFitter:
             angle_str = f"rx{int(item['angle'][0])}_ry{int(item['angle'][1])}_rz{int(item['angle'][2])}"
             trans_str = f"tx{item['real_trans'][0]:.3f}_ty{item['real_trans'][1]:.3f}_tz{item['real_trans'][2]:.3f}"
             filename = f"#{i}_{angle_str}_{trans_str}.pdb"
-            save_rotated_pdb(self.input_pdb, rot_mtx, item["real_trans"], os.path.join(self.outdir, "PDB", filename))
+            save_rotated_pdb(self.input_pdb, rot_mtx, item["real_trans"], os.path.join(self.outdir, "PDB", filename), i)
 
     def _save_topn_vec_as_pdb(self):
         os.makedirs(os.path.join(self.outdir, "VEC"), exist_ok=True)
@@ -572,7 +572,7 @@ class MapFitter:
 
         for result in tqdm(self.result_list, desc="Removing Duplicates"):
             # duplicate removal
-            if tuple(result["angle"]) in hash_angs.keys():
+            if tuple(result["angle"]) in hash_angs:
                 # print(f"Duplicate: {result_mrc['angle']}")
                 trans = hash_angs[tuple(result["angle"])]
                 # manhattan distance
@@ -701,7 +701,7 @@ class MapFitter:
 
         if v_ave is not None and v_std is not None and ss_ave is not None and ss_std is not None:
             mix_score, mix_vox_trans = self._find_best_trans_by_fft_list_ss(
-                fft_result_list, self.alpha, v_ave, v_std, ss_ave, ss_std
+                fft_result_list, self.alpha, v_ave, v_std, ss_ave, ss_std, self.gpu
             )
         else:
             mix_score, mix_vox_trans = None, None
@@ -813,66 +813,67 @@ class MapFitter:
     def _gpu_rot_map(data, vec, mtx, new_pos_grid, device, rot_vec=True, ss_mix_score_mode=False, tgt_map_ss_data=None):
         import torch
 
-        # set the dimension to be x dimension as all dimension are the same
-        dim = data.shape[0]
+        with torch.no_grad():
+            # set the dimension to be x dimension as all dimension are the same
+            dim = data.shape[0]
 
-        # set the rotation center
-        cent = 0.5 * float(dim)
-        cent = torch.tensor(cent, device=device, dtype=torch.float32)
+            # set the rotation center
+            cent = 0.5 * float(dim)
+            cent = torch.tensor(cent, device=device, dtype=torch.float32, requires_grad=False)
 
-        # get relative new positions from center
-        new_pos = new_pos_grid - cent
+            # get relative new positions from center
+            new_pos = new_pos_grid - cent
 
-        # reversely rotate the new position lists to get old positions
-        # old_pos = torch.einsum("ij, kj->ki", mtx.T, new_pos) + cent
-        old_pos = new_pos @ mtx + cent
+            # reversely rotate the new position lists to get old positions
+            # old_pos = torch.einsum("ij, kj->ki", mtx.T, new_pos) + cent
+            old_pos = new_pos @ mtx + cent
 
-        # round old positions to nearest integer
-        old_pos = torch.round(old_pos)
+            # round old positions to nearest integer
+            old_pos.round_()
 
-        # init new vec and dens array
-        new_data_array = torch.zeros_like(data, device=device, dtype=torch.float32)
+            # init new vec and dens array
+            new_data_array = torch.zeros_like(data, device=device, dtype=torch.float32, requires_grad=False)
 
-        in_bound_mask = torch.all((old_pos >= 0) & (old_pos < dim), axis=1)
+            in_bound_mask = torch.all((old_pos >= 0) & (old_pos < dim), axis=1)
 
-        # get valid old positions in bound
-        valid_old_pos = (old_pos[in_bound_mask]).long()
+            # get valid old positions in bound
+            valid_old_pos = (old_pos[in_bound_mask]).long()
 
-        # get nonzero density positions in the map
-        # non_zero_mask = data[valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]] > 0
+            # get nonzero density positions in the map
+            # non_zero_mask = data[valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]] > 0
 
-        # apply nonzero mask to valid positions
-        # non_zero_old_pos = valid_old_pos[non_zero_mask]
+            # apply nonzero mask to valid positions
+            # non_zero_old_pos = valid_old_pos[non_zero_mask]
 
-        # get corresponding new positions
-        # new_pos = (new_pos[in_bound_mask][non_zero_mask] + cent).long()
-        new_pos = (new_pos[in_bound_mask] + cent).long()
+            # get corresponding new positions
+            # new_pos = (new_pos[in_bound_mask][non_zero_mask] + cent).long()
+            new_pos = new_pos[in_bound_mask].add_(cent).long()
 
-        # fill new density entries
-        new_data_array[new_pos[:, 0], new_pos[:, 1], new_pos[:, 2]] = data[
-            valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]
-        ]
-
-        if ss_mix_score_mode:
-            new_ss_array = torch.zeros_like(tgt_map_ss_data, device=device, dtype=torch.float32)
-            new_ss_array[new_pos[:, 0], new_pos[:, 1], new_pos[:, 2]] = tgt_map_ss_data[
+            # fill new density entries
+            new_data_array[new_pos[:, 0], new_pos[:, 1], new_pos[:, 2]] = data[
                 valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]
             ]
-        else:
-            new_ss_array = None
 
-        if rot_vec:
-            new_vec_array = torch.zeros_like(vec, device=device, dtype=torch.float32)
-            # fetch and rotate the vectors
-            non_zero_vecs = vec[valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]]
+            if ss_mix_score_mode:
+                new_ss_array = torch.zeros_like(tgt_map_ss_data, device=device, dtype=torch.float32, requires_grad=False)
+                new_ss_array[new_pos[:, 0], new_pos[:, 1], new_pos[:, 2]] = tgt_map_ss_data[
+                    valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]
+                ]
+            else:
+                new_ss_array = None
 
-            new_vec = non_zero_vecs @ mtx.T
-            # new_vec = torch.einsum("ij, kj->ki", mtx, non_zero_vecs)
+            if rot_vec:
+                new_vec_array = torch.zeros_like(vec, device=device, dtype=torch.float32, requires_grad=False)
+                # fetch and rotate the vectors
+                non_zero_vecs = vec[valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]]
 
-            # fill new vector entries
-            new_vec_array[new_pos[:, 0], new_pos[:, 1], new_pos[:, 2]] = new_vec
-        else:
-            new_vec_array = None
+                new_vec = non_zero_vecs @ mtx.T
+                # new_vec = torch.einsum("ij, kj->ki", mtx, non_zero_vecs)
+
+                # fill new vector entries
+                new_vec_array[new_pos[:, 0], new_pos[:, 1], new_pos[:, 2]] = new_vec
+            else:
+                new_vec_array = None
 
         return new_vec_array, new_data_array, new_ss_array
 
@@ -894,15 +895,6 @@ class MapFitter:
 
         # init new vec and dens array
         new_data_array = np.zeros_like(data)
-
-        # in_bound_mask = (
-        #     (old_pos[:, 0] >= 0)
-        #     * (old_pos[:, 1] >= 0)
-        #     * (old_pos[:, 2] >= 0)
-        #     * (old_pos[:, 0] < dim)
-        #     * (old_pos[:, 1] < dim)
-        #     * (old_pos[:, 2] < dim)
-        # )
 
         in_bound_mask = np.all((old_pos >= 0) & (old_pos < dim), axis=1)
 
@@ -986,17 +978,32 @@ class MapFitter:
             return best_score, trans
 
     @staticmethod
-    def _find_best_trans_by_fft_list_ss(fft_result_list, alpha, vec_score_mean, vec_score_std, ss_score_mean, ss_score_std):
-        sum_arr_v = np.sum(fft_result_list[:3], axis=0)
-        sum_arr_ss = np.sum(fft_result_list[3:-1], axis=0)  # do not include nucleotide score
+    def _find_best_trans_by_fft_list_ss(
+        fft_result_list, alpha, vec_score_mean, vec_score_std, ss_score_mean, ss_score_std, gpu=False
+    ):
+        if gpu:
+            sum_arr_v = torch.stack(fft_result_list[:3]).sum(dim=0)
+            sum_arr_ss = torch.stack(fft_result_list[4:-1]).sum(dim=0)  # do not include nucleotide score
 
-        # z-score normalization
-        sum_arr_v = (sum_arr_v - vec_score_mean) / vec_score_std
-        sum_arr_ss = (sum_arr_ss - ss_score_mean) / ss_score_std
+            # z-score normalization
+            sum_arr_v = (sum_arr_v - vec_score_mean) / vec_score_std
+            sum_arr_ss = (sum_arr_ss - ss_score_mean) / ss_score_std
 
-        sum_arr_mixed = (1 - alpha) * sum_arr_v + alpha * sum_arr_ss
-        best_score = sum_arr_mixed.max()
-        best_trans = np.unravel_index(sum_arr_mixed.argmax(), sum_arr_mixed.shape)
+            sum_arr_mixed = (1 - alpha) * sum_arr_v + alpha * sum_arr_ss
+            best_score = torch.amax(sum_arr_mixed).cpu().numpy()
+            best_trans = np.unravel_index(sum_arr_mixed.cpu().numpy().argmax(), sum_arr_mixed.shape)
+
+        else:
+            sum_arr_v = np.sum(fft_result_list[:3], axis=0)
+            sum_arr_ss = np.sum(fft_result_list[3:-1], axis=0)  # do not include nucleotide score
+
+            # z-score normalization
+            sum_arr_v = (sum_arr_v - vec_score_mean) / vec_score_std
+            sum_arr_ss = (sum_arr_ss - ss_score_mean) / ss_score_std
+
+            sum_arr_mixed = (1 - alpha) * sum_arr_v + alpha * sum_arr_ss
+            best_score = sum_arr_mixed.max()
+            best_trans = np.unravel_index(sum_arr_mixed.argmax(), sum_arr_mixed.shape)
 
         return best_score, best_trans
 
@@ -1028,64 +1035,3 @@ class MapFitter:
             if quat not in seen:
                 seen.add(quat)
                 self.angle_comb.append(ang)
-
-    def _calc_angle_comb_quat(self):
-        """
-        Get the angle combinations in quaternion format
-        """
-        filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "orientation/data/c48u1641.quat")
-
-        with open(filename, "r") as f:
-            quat_list = f.readlines()
-            for line in quat_list[4:]:
-                quat = line.split()
-                quat = [float(q) for q in quat][:-1]
-                euler_angle = R.from_quat(quat).as_euler("xyz", degrees=True)
-                self.angle_comb.append(euler_angle)
-
-        # # orientation sets available: name of file: (Norientations, degree)
-        # rot_sets = {
-        #     "E.npy": (1, 360.0),
-        #     "c48u1.npy": (24, 62.8),
-        #     "c600v.npy": (60, 44.48),
-        #     "c48n9.npy": (216, 36.47),
-        #     "c600vc.npy": (360, 27.78),
-        #     "c48u27.npy": (648, 20.83),
-        #     "c48u83.npy": (1992, 16.29),
-        #     "c48u181.npy": (4344, 12.29),
-        #     "c48n309.npy": (7416, 9.72),
-        #     "c48n527.npy": (12648, 8.17),
-        #     "c48u815.npy": (19560, 7.4),
-        #     "c48u1153.npy": (27672, 6.6),
-        #     "c48u1201.npy": (28824, 6.48),
-        #     "c48u1641.npy": (39384, 5.75),
-        #     "c48u2219.npy": (53256, 5.27),
-        #     "c48u2947.npy": (70728, 4.71),
-        #     "c48u3733.npy": (89592, 4.37),
-        #     "c48u4749.npy": (113976, 4.0),
-        #     "c48u5879.npy": (141096, 3.74),
-        #     "c48u7111.npy": (170664, 3.53),
-        #     "c48u8649.npy": (207576, 3.26),
-        # }
-        #
-        # # determine the appropriate set to use
-        # sdiff = 9999
-        # for s, n in rot_sets.items():
-        #     alpha = n[1]
-        #     diff = abs(self.ang_interval - alpha)
-        #     if diff < sdiff or sdiff is None:
-        #         sdiff = diff
-        #         fname = s
-        #
-        # infile = os.path.join(os.path.dirname(__file__), "data", fname)
-        # quat_weights = np.load(infile)
-        #
-        # quats = quat_weights[:, :4]
-        # # weights = quat_weights[:, -1]
-        # # alpha = rot_sets[fname][1]
-        #
-        # self.angle_comb = []
-        # # cover to euler angles
-        # for quat in quats:
-        #     euler_angle = R.from_quat(quat).as_euler("xyz", degrees=True)
-        #     self.angle_comb.append(euler_angle)

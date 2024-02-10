@@ -772,3 +772,110 @@ def next_fast_fft_len(size):
 #         # print(f"vave={vave}, vstd={vstd}, pave={pave}, pstd={pstd}, mix_score_ave={mix_score_ave}, mix_score_std={mix_score_std}")
 #
 #     return mix_score_list
+
+
+# @jit(nopython=True, nogil=True)
+# def do_resample_and_vec(
+#         src_xwidth,
+#         src_orig,
+#         src_dims,
+#         src_data,
+#         dest_xwidth,
+#         dest_orig,
+#         new_dim,
+#         dreso,
+#         ss_data,
+#         old_pos_list,
+#         new_pos_list,
+# ):
+#     """
+#     The do_resample_and_vec function takes in the following parameters:
+#         src_xwidth - The width of the source map.
+#         src_orig - The origin of the source map.
+#         src_dims - The dimensions of the source map.
+#         src_data - A array contains the density data. The shape of the array is (xdim, ydim, zdim).
+#
+#     :param src_xwidth: Calculate the grid step
+#     :param src_orig: Define the origin of the source volume
+#     :param src_dims: Determine the size of the source volume
+#     :param src_data: Data of the source volume
+#     :param dest_xwidth: Determine the size of the new grid
+#     :param dest_orig: Define the origin of the destination volume
+#     :param new_dim: Determine the size of the new volume
+#     :param dreso: Determine the Guassian filter size
+#     :param ss_data: data of the secondary structure
+#     :param : Determine the resolution of the new map
+#     :return: The density map, the unit vectors and the secondary structure data
+#     """
+#
+#     gstep = src_xwidth
+#     fs = (dreso / gstep) * 0.5
+#     fs = fs ** 2
+#     fsiv = 1.0 / fs
+#     fmaxd = (dreso / gstep) * 2.0
+#     print("#maxd=", fmaxd)
+#     print("#fsiv=", fsiv)
+#
+#     dest_vec = np.zeros((new_dim, new_dim, new_dim, 3), dtype="float32")
+#     dest_data = np.zeros((new_dim, new_dim, new_dim), dtype="float32")
+#     dest_ss_data = np.zeros((new_dim, new_dim, new_dim, 4), dtype="float32")
+#
+#     for new_pos, old_pos in zip(new_pos_list, old_pos_list):
+#         stp = np.maximum(old_pos - fmaxd, 0).astype(np.int32)
+#         endp = np.minimum(old_pos + fmaxd + 1, src_dims).astype(np.int32)
+#
+#         # compute the total density
+#         dtotal, v = calc(stp, endp, old_pos, src_data, fsiv)
+#
+#         if ss_data is not None:
+#             dest_ss_data[new_pos[0], new_pos[1], new_pos[2], 0], _ = calc(stp, endp, old_pos, ss_data[..., 0], fsiv, False)
+#             dest_ss_data[new_pos[0], new_pos[1], new_pos[2], 1], _ = calc(stp, endp, old_pos, ss_data[..., 1], fsiv, False)
+#             dest_ss_data[new_pos[0], new_pos[1], new_pos[2], 2], _ = calc(stp, endp, old_pos, ss_data[..., 2], fsiv, False)
+#             dest_ss_data[new_pos[0], new_pos[1], new_pos[2], 3], _ = calc(stp, endp, old_pos, ss_data[..., 3], fsiv, False)
+#
+#         if np.isclose(dtotal, 0.0):
+#             continue
+#
+#         dest_data[new_pos[0], new_pos[1], new_pos[2]] = dtotal
+#         # tmpcd = pos2 / dtotal - old_pos
+#         # dvec = np.sqrt(np.sum(tmpcd ** 2))
+#         # if dvec == 0:
+#         #     dvec = 1.0
+#         # dest_vec[new_pos[0], new_pos[1], new_pos[2]] = tmpcd / dvec
+#         dest_vec[new_pos[0], new_pos[1], new_pos[2]] = v
+#
+#     return dest_data, dest_vec, dest_ss_data
+
+# @jit(nopython=True, nogil=True)
+# def calc(stp, endp, pos, mrc1_data, fsiv, calc_vector=True):
+#     """Vectorized version of calc"""
+#
+#     xx = np.arange(stp[0], endp[0], 1)
+#     yy = np.arange(stp[1], endp[1], 1)
+#     zz = np.arange(stp[2], endp[2], 1)
+#
+#     xx = np.expand_dims(xx, axis=1)
+#     xx = np.expand_dims(xx, axis=1)
+#     yy = np.expand_dims(yy, axis=1)
+#     yy = np.expand_dims(yy, axis=0)
+#     zz = np.expand_dims(zz, axis=0)
+#     zz = np.expand_dims(zz, axis=0)
+#
+#     # calculate the distance between the center of the voxel and the center of the particle
+#     d2 = (xx - pos[0])**2 + (yy - pos[1])**2 + (zz - pos[2])**2
+#
+#     # calculate the density and vector in resized map using Gaussian interpolation in original MRC density map
+#     d = np.exp(-1.5 * d2 * fsiv) * mrc1_data[stp[0]:endp[0], stp[1]:endp[1], stp[2]:endp[2]]
+#     dtotal = np.sum(d)
+#
+#     if calc_vector:
+#         # calculate the vector
+#         pos2 = np.array([np.sum(d * xx), np.sum(d * yy), np.sum(d * zz)])
+#
+#         pos2 = pos2 / dtotal
+#
+#         v = (pos2 - pos) / np.sqrt(np.sum((pos2 - pos)**2))
+#     else:
+#         v = None
+#
+#     return dtotal, v
