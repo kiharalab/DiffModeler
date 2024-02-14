@@ -1,25 +1,32 @@
 import os
+
+
 def mkdir(path):
-    path=path.strip()
-    path=path.rstrip("\\")
-    isExists=os.path.exists(path)
+    path = path.strip()
+    path = path.rstrip("\\")
+    isExists = os.path.exists(path)
     if not isExists:
-        print (path+" created")
+        print(path + " created")
         os.makedirs(path)
         return True
     else:
-        print (path+' existed')
+        print(path + ' existed')
         return False
+
+
 def execCmd(cmd):
     r = os.popen(cmd)
     text = r.read()
     r.close()
     return text
 
+
 def run_command(cmd):
     os.system(cmd)
 
+
 import shutil
+
 
 def copy_directory(source_dir, destination_dir):
     """
@@ -40,24 +47,34 @@ def copy_directory(source_dir, destination_dir):
     except OSError as e:
         print(f"Error creating destination directory: {e}")
     return destination_dir
+
+
 def functToDeleteItems(fullPathToDir):
-   for itemsInDir in os.listdir(fullPathToDir):
+    for itemsInDir in os.listdir(fullPathToDir):
         if os.path.isdir(os.path.join(fullPathToDir, itemsInDir)):
             functToDeleteItems(os.path.join(fullPathToDir, itemsInDir))
         else:
-            os.remove(os.path.join(fullPathToDir,itemsInDir))
+            os.remove(os.path.join(fullPathToDir, itemsInDir))
+
+
 import gzip
+
+
 def unzip_gz(file_path):
-    new_path = file_path.replace(".gz","")
+    new_path = file_path.replace(".gz", "")
     g_file = gzip.GzipFile(file_path)
-    with open(new_path,"wb+") as file:
+    with open(new_path, "wb+") as file:
         file.write(g_file.read())
     g_file.close()
     return new_path
+
+
 import os
 import tarfile
 import zipfile
 import gzip
+from glob import glob
+
 
 def extract_compressed_file(file_path, extract_dir):
     """
@@ -86,11 +103,11 @@ def extract_compressed_file(file_path, extract_dir):
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
     else:
-        print("Unsupported zipped file format %s"%file_path)
+        print("Unsupported zipped file format %s" % file_path)
         return
-    listfiles=os.listdir(extract_dir)
-    tmp_dir=os.path.join(extract_dir,listfiles[0])
+    listfiles = glob(os.path.join(extract_dir, "*.pdb"))  # only take the pdb files
+    tmp_dir = os.path.join(extract_dir, listfiles[0])
     if os.path.isdir(tmp_dir):
-        extract_dir=tmp_dir
+        extract_dir = tmp_dir
     print(f"Successfully extracted {file_path} to {extract_dir}")
     return extract_dir
