@@ -64,8 +64,8 @@ def extract_residue_locations(pdb_file):
     residue_locations = []
     with open(pdb_file) as f:
         for line in f:
-            if line.startswith("ATOM") and line[12:16].strip() == "CA":  # only CA atoms
-                # if tokens[0] == "ATOM": # all atoms
+            # CA for protein, P for dna/rna
+            if line.startswith("ATOM") and (line[12:16].strip() == "CA" or line[12:16].strip() == "P"):
                 residue_locations.append(
                     np.array(
                         (float(line[30:38]), float(line[38:46]), float(line[46:54]))
