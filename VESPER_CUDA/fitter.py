@@ -15,24 +15,25 @@ from utils.utils import euler_to_mtx, get_score
 
 class MapFitter:
     def __init__(
-        self,
-        ref,
-        tgt,
-        ang_interval,
-        mode,
-        remove_dup,
-        ldp_path,
-        backbone_path,
-        input_pdb,
-        threads,
-        gpu,
-        device,
-        topn=10,
-        outdir=None,
-        save_mrc=False,
-        alpha=None,
-        confine_angles=None,
-        save_vec=False,
+            self,
+            ref,
+            tgt,
+            ang_interval,
+            mode,
+            remove_dup,
+            ldp_path,
+            backbone_path,
+            input_pdb,
+            threads,
+            gpu,
+            device,
+            topn=10,
+            outdir=None,
+            save_mrc=False,
+            alpha=None,
+            confine_angles=None,
+            save_vec=False,
+            score=None,
     ):
 
         print("###Initializing fitter###")
@@ -61,6 +62,7 @@ class MapFitter:
         self.score_std = None
         self.alpha = alpha
         self.confine_angles = confine_angles
+        self.refine = True
 
         if self.outdir is None and self.input_pdb is not None:
             self.outdir = os.path.join("./outputs", "VESPER_RUN_" + datetime.now().strftime("%m%d_%H%M%S"))
@@ -69,15 +71,16 @@ class MapFitter:
 
         self.ldp_recall_mode = (ldp_path is not None) and (backbone_path is not None)
         self.ss_mix_score_mode = (
-            (alpha is not None) and (self.ref_map.new_ss_data is not None) and (self.tgt_map.new_ss_data is not None)
+                (alpha is not None) and (self.ref_map.new_ss_data is not None) and (
+                self.tgt_map.new_ss_data is not None)
         )
 
         # init rotation grid
         self.search_pos_grid = (
             np.mgrid[
-                0 : self.tgt_map.new_dim,
-                0 : self.tgt_map.new_dim,
-                0 : self.tgt_map.new_dim,
+            0: self.tgt_map.new_dim,
+            0: self.tgt_map.new_dim,
+            0: self.tgt_map.new_dim,
             ]
             .reshape(3, -1)
             .T
@@ -87,6 +90,9 @@ class MapFitter:
         self._calc_angle_comb()
         # self._calc_angle_comb_quat()
         self.total_rotations = len(self.angle_comb)
+
+        if score is not None:
+            self.refine = False
 
         # init the target map vectors
         ref_x_real = self.ref_map.vec[:, :, :, 0]
@@ -150,8 +156,8 @@ class MapFitter:
             backbone_ca = []
             with open(backbone_path) as f:
                 for line in f:
-                    if line.startswith("ATOM") and line[12:16].strip() == "CA":  # only CA atoms
-                        # if tokens[0] == "ATOM": # all atoms
+                    # filter only CA and P atoms for protein and nucleotide backbone
+                    if line.startswith("ATOM") and (line[12:16].strip() == "CA" or line[12:16].strip() == "P"):
                         backbone_ca.append(np.array((float(line[30:38]), float(line[38:46]), float(line[46:54]))))
 
             assert len(backbone_ca) > 0, "No CA atoms found in backbone file."
@@ -166,7 +172,8 @@ class MapFitter:
             self.tgt_map.search_pos_grid_gpu = torch.from_numpy(self.search_pos_grid).to(self.device).share_memory_()
 
             if self.ss_mix_score_mode:
-                self.tgt_map.new_ss_data_gpu = torch.from_numpy(self.tgt_map.new_ss_data).to(self.device).share_memory_()
+                self.tgt_map.new_ss_data_gpu = torch.from_numpy(self.tgt_map.new_ss_data).to(
+                    self.device).share_memory_()
 
             self.ref_map_fft_list_gpu = [
                 torch.from_numpy(fft_arr).to(self.device).share_memory_() for fft_arr in self.ref_map_fft_list
@@ -266,7 +273,7 @@ class MapFitter:
 
         # refine
 
-        if self.ang_interval >= 5:
+        if self.ang_interval >= 5 and self.refine:
             self.refine_ss(2)
 
         if self.refined_list:
@@ -439,7 +446,8 @@ class MapFitter:
             curr_refine_ang_list[curr_refine_ang_list > 360] -= 360
             with tqdm(total=len(curr_refine_ang_list), position=1, leave=False) as pbar:
                 for rot_ang in curr_refine_ang_list:
-                    result = self._rot_and_search_fft_ss(rot_ang, False, self.vec_ave, self.vec_std, self.ss_ave, self.ss_std)
+                    result = self._rot_and_search_fft_ss(rot_ang, False, self.vec_ave, self.vec_std, self.ss_ave,
+                                                         self.ss_std)
                     curr_result_list.append(
                         {
                             "angle": rot_ang,
@@ -649,7 +657,8 @@ class MapFitter:
             trans[2] -= self.tgt_map.new_dim
 
         tgt_new_cent = r.apply(self.tgt_map.new_cent)  # rotate the center
-        real_trans = self.ref_map.new_cent - (tgt_new_cent + trans * self.tgt_map.new_width)  # calculate new translation
+        real_trans = self.ref_map.new_cent - (
+                tgt_new_cent + trans * self.tgt_map.new_width)  # calculate new translation
         return real_trans
 
     def _rot_and_search_fft_ss(self, rot_ang, return_data, v_ave, v_std, ss_ave, ss_std):
@@ -799,9 +808,9 @@ class MapFitter:
         score, vox_trans = self._find_best_trans_by_fft_list(fft_result_list, gpu=self.gpu)
 
         if self.mode == "CC":
-            score = score / (self.ref_map.std**2)
+            score = score / (self.ref_map.std ** 2)
         if self.mode == "PCC":
-            score = score / (self.ref_map.std_norm_ave**2)
+            score = score / (self.ref_map.std_norm_ave ** 2)
 
         # return data if specified
         if return_data:
@@ -855,7 +864,8 @@ class MapFitter:
             ]
 
             if ss_mix_score_mode:
-                new_ss_array = torch.zeros_like(tgt_map_ss_data, device=device, dtype=torch.float32, requires_grad=False)
+                new_ss_array = torch.zeros_like(tgt_map_ss_data, device=device, dtype=torch.float32,
+                                                requires_grad=False)
                 new_ss_array[new_pos[:, 0], new_pos[:, 1], new_pos[:, 2]] = tgt_map_ss_data[
                     valid_old_pos[:, 0], valid_old_pos[:, 1], valid_old_pos[:, 2]
                 ]
@@ -946,7 +956,7 @@ class MapFitter:
             for ref_fourier, tgt_real in zip(ref_map_fft_list, tgt_map_fft_list):
                 tgt_fourier = torch.fft.rfftn(tgt_real)
                 dot_fourier = ref_fourier * tgt_fourier
-                dot_real = torch.fft.irfftn(dot_fourier, norm="ortho")
+                dot_real = torch.fft.irfftn(dot_fourier, norm="forward")
                 dot_product_list.append(dot_real)
         else:
             from pyfftw.interfaces import numpy_fft
@@ -954,7 +964,7 @@ class MapFitter:
             for ref_fourier, tgt_real in zip(ref_map_fft_list, tgt_map_fft_list):
                 tgt_fourier = numpy_fft.rfftn(tgt_real)
                 dot_fourier = ref_fourier * tgt_fourier
-                dot_real = numpy_fft.irfftn(dot_fourier, norm="ortho")
+                dot_real = numpy_fft.irfftn(dot_fourier, norm="forward")
                 dot_product_list.append(dot_real)
 
         return dot_product_list
@@ -979,7 +989,7 @@ class MapFitter:
 
     @staticmethod
     def _find_best_trans_by_fft_list_ss(
-        fft_result_list, alpha, vec_score_mean, vec_score_std, ss_score_mean, ss_score_std, gpu=False
+            fft_result_list, alpha, vec_score_mean, vec_score_std, ss_score_mean, ss_score_std, gpu=False
     ):
         if gpu:
             sum_arr_v = torch.stack(fft_result_list[:3]).sum(dim=0)

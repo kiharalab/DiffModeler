@@ -99,6 +99,7 @@ if __name__ == "__main__":
         "-res", type=float, default=None,
         help="Resolution of the experimental map used to create simulated map from structure"
     )
+    ss.add_argument("-score", type=str, default=None, required=False, help="Path to a list of transformations to score")
 
     args = parser.parse_args()
 
