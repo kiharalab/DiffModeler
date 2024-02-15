@@ -62,7 +62,7 @@ class MapFitter:
         self.score_std = None
         self.alpha = alpha
         self.confine_angles = confine_angles
-        self.refine = True
+        # self.refine = True
 
         if self.outdir is None and self.input_pdb is not None:
             self.outdir = os.path.join("./outputs", "VESPER_RUN_" + datetime.now().strftime("%m%d_%H%M%S"))
@@ -91,8 +91,8 @@ class MapFitter:
         # self._calc_angle_comb_quat()
         self.total_rotations = len(self.angle_comb)
 
-        if score is not None:
-            self.refine = False
+        # if score is not None:
+        #     self.refine = False
 
         # init the target map vectors
         ref_x_real = self.ref_map.vec[:, :, :, 0]
