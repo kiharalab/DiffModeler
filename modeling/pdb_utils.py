@@ -3,6 +3,9 @@ from ops.pdb_utils import reindex_cif
 
 def filter_backbone(input_pdb_path,backbone_pdb_path):
     backbone_list=["CA","C","N"]
+    #support DNA/RNA template fitting
+    backbone_list_drna=["OP3","P", "OP1", "OP2", "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "O2'", "C1'"]
+    backbone_list+=backbone_list_drna
     with open(input_pdb_path,'r') as file:
         with open(backbone_pdb_path,'w') as wfile:
             for line in file:
