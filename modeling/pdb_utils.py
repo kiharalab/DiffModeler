@@ -56,7 +56,7 @@ def extract_residue_locations_slow(pdb_file):
             for atom in residue.get_atoms():
                 #only extract ca positions
                 atom_name = atom.get_name().replace(" ","")
-                if atom_name=="CA":
+                if atom_name=="CA" or atom_name=="P":
                     residue_locations.append(atom.get_coord())
 
     return np.array(residue_locations)

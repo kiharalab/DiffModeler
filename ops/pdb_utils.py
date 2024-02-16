@@ -13,9 +13,14 @@ def read_proteinpdb_data(input_cif_path,run_type=0,atom_cutoff=1):
                     "HIS", "CYS", "ASN", "TRP", "GLN", "GLY"]
     dna_rna_set = {"A":0, "U":1, "T":1, "C":2, "G":3,
                    "DA":0, "DU":1, "DT":1, "DC":2, "DG":3}
+    dna_rna_list=list(dna_rna_set.keys())
     residue_dict = {}
     for k in range(len(residue_list)):
         res_name = residue_list[k]
+        residue_dict[res_name]=k+1
+    #extend support for DNA/RNA
+    for k in range(len(residue_list),len(residue_list)+len(dna_rna_set)):
+        res_name=dna_rna_list[k-len(residue_list)]
         residue_dict[res_name]=k+1
     #atom class: N:1 CA:2 C:3 O:4 CB:5 others: 6
     if run_type==0:
@@ -366,6 +371,8 @@ def count_residues(input_pdb_path):
 
     protein_set=["ALA", "VAL", "PHE", "PRO", "MET", "ILE", "LEU", "ASP", "GLU", "LYS", "ARG", "SER", "THR", "TYR",
                     "HIS", "CYS", "ASN", "TRP", "GLN", "GLY"]
+    drna_set=['DA','DT','DC','DG','A','U','T','C','G']
+    protein_set += drna_set
     protein_set = set(protein_set)
     count_res =0
     prev_nuc_id = None
