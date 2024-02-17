@@ -7,10 +7,18 @@ def read_structure_txt(input_dir,input_file_path):
     with open(input_file_path,'r') as rfile:
         for line in rfile:
             line = line.strip("\n")
+            if len(line)==0:
+                continue #user sometime put empty lines
             split_info= line.split()
             input_file_path = os.path.join(input_dir,split_info[0])
+            if not os.path.exists(input_file_path):
+                print("%s file is missing"%split_info[0])
+                continue
             structure_dict[input_file_path]=split_info[1:]
     print("structure waiting to be fitted: ",structure_dict)
+    if len(structure_dict)==0:
+        print("No templated is found by the config file!!!")
+        exit()
     return structure_dict
 import pickle
 def load_pickle(path):
