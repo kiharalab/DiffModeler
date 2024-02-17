@@ -7,7 +7,8 @@ def read_structure_txt(input_dir,input_file_path):
     with open(input_file_path,'r') as rfile:
         for line in rfile:
             line = line.strip("\n")
-            if len(line)==0:
+            if len(line)<=4 or ".pdb" not in line:
+                print("invalid line %s"%line)
                 continue #user sometime put empty lines
             split_info= line.split()
             input_file_path = os.path.join(input_dir,split_info[0])
