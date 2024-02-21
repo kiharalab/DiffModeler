@@ -338,6 +338,10 @@ def cif2pdb(input_cif_path,final_pdb_path):
                             remain_select_list=[x for x in tmp_chain_list if x not in list(chain_map_dict.values())]
                             chain_map_dict[current_chain]=remain_select_list[0]
                             current_chain = chain_map_dict[current_chain]
+                    if current_res_index>9999:
+                        current_res_index=9999
+                    if current_atom_index>9999999:
+                        current_atom_index=9999999
                     wline=""
                     wline += "ATOM%7d %-4s %3s%2s%4d    " % (current_atom_index, current_atom_name,
                                                              current_res_name, current_chain,current_res_index)
