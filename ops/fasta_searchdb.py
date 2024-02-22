@@ -196,6 +196,10 @@ def fasta_searchdb(params, save_path):
                         print("get metadata failed for %s" % match_id)
                         actual_structure_length = 0
 
+                if k == 0:
+                    # save the top 1 in case of no length match
+                    top1_structure_length = actual_structure_length
+
                 curr_seq_length_diff = abs(expected_seq_length - actual_structure_length)
 
                 if expected_seq_length <= actual_structure_length <= len(chain_dict[key]):
@@ -219,6 +223,8 @@ def fasta_searchdb(params, save_path):
                     # we can only pick the top 1 candidate
                     match_id, evalue = current_match_list[0]
                     closest_choice = match_id
+                    num_res_difference = abs(expected_seq_length - top1_structure_length)
+
                 if "AFDB" in closest_choice:
                     matched_dict[key] = closest_choice
                 else:
