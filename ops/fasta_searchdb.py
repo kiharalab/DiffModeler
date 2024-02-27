@@ -183,7 +183,7 @@ def fasta_searchdb(params, save_path):
                     database = split_info[0]
                     pdb_id = split_info[1]
 
-                    metadata = get_metadata(pdb_id.split("-")[1].split("-")[0], 3, "afdb")
+                    metadata = get_metadata(pdb_id.split("-")[1], 3, "afdb")
 
                     try:
                         actual_structure_length = metadata["uniprot_entry"]["sequence_length"]
