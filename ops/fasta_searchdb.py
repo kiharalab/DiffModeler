@@ -83,8 +83,8 @@ def get_metadata(pdb_id, max_retry, type):
                 return response.json()
         except:
             max_retry -= 1  # try again
-        finally:
             time.sleep(30)
+        finally:
             max_retry -= 1  # try again after 30 seconds
     return None  # explicitly return None
 
