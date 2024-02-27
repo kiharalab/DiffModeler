@@ -108,7 +108,8 @@ def fasta_searchdb(params, save_path):
         output_path = os.path.join(single_chain_pdb_dir, "exp_search.out")
         search_command = "blastp -query %s -db %s -out %s -num_threads %d" % (fasta_path, params['db_exp_path'],
                                                                               output_path, params['search_thread'])
-        os.system(search_command)
+        if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
+            os.system(search_command)
         exp_match_dict = parse_blast_output(output_path)
     else:
         exp_match_dict = {}  # empty dict
@@ -154,7 +155,8 @@ def fasta_searchdb(params, save_path):
         output_path = os.path.join(single_chain_pdb_dir, "expaf_search.out")
         search_command = "blastp -query %s -db %s -out %s -num_threads %d" % (remain_fasta_path, params['db_path'],
                                                                               output_path, params['search_thread'])
-        os.system(search_command)
+        if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
+            os.system(search_command)
         expaf_match_dict = parse_blast_output(output_path)
         if len(expaf_match_dict) != len(remain_chain_dict):
             for tmp_key in remain_chain_dict:
@@ -181,7 +183,7 @@ def fasta_searchdb(params, save_path):
                     database = split_info[0]
                     pdb_id = split_info[1]
 
-                    metadata = get_metadata(pdb_id.split("-")[1], 3, "afdb")
+                    metadata = get_metadata(pdb_id.split("-")[1].split("-")[0], 3, "afdb")
 
                     try:
                         actual_structure_length = metadata["uniprot_entry"]["sequence_length"]
