@@ -76,6 +76,7 @@ def get_metadata(pdb_id, max_retry, type):
         url = f"https://data.rcsb.org/rest/v1/core/entry/{pdb_id}"
     elif type == "afdb":
         url = f"https://alphafold.ebi.ac.uk/api/uniprot/summary/{pdb_id}.json"
+    print("fetching metadata from %s" % url)
     while max_retry > 0:
         try:
             response = requests.get(url)
@@ -83,6 +84,7 @@ def get_metadata(pdb_id, max_retry, type):
                 return response.json()
         except:
             max_retry -= 1  # try again
+            print("url failed, retry after 30 seconds %s"%url)
             time.sleep(30)
         finally:
             max_retry -= 1  # try again after 30 seconds
