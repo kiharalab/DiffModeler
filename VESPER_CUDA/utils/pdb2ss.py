@@ -231,7 +231,7 @@ def gen_simu_map(file_path, res, output_path, ref_dens_map=None):
         #     raise Exception("Make sure the input file is a PDB or mmCIF file.")
         # simu_map = sb.gaussian_blur_real_space(st, res, densMap=ref_dens_map)
         # simu_map.write_to_MRC_file(output_path)
-        pdb2vol(pdb_path, output_path, res, ref_map=ref_dens_map)
+        pdb2vol(pdb_path, res, output_path, ref_map=ref_dens_map)
         assert os.path.exists(output_path), "Simulated map not generated."
 
 

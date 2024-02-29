@@ -121,7 +121,7 @@ if __name__ == "__main__":
         assert args.res is not None, "Please specify resolution when using structure as input."
         # simulate the map at target resolution
         sim_map_path = os.path.join(tempfile.gettempdir(), f"simu_map_{rand_str}.mrc")
-        pdb2vol(args.b, sim_map_path, args.res)
+        pdb2vol(args.b, args.res, sim_map_path, backbone_only=True)
         assert os.path.exists(sim_map_path), "Failed to create simulated map from structure."
 
         # generate secondary structure assignment for the simulated map if using ss mode

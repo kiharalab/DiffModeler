@@ -7,18 +7,31 @@ import mrcfile
 from scipy.ndimage import fourier_gaussian, gaussian_filter, zoom
 from scipy.fftpack import fftn, ifftn
 
+from tqdm import tqdm
+from numba import njit
+from numba.typed import Dict, List
+
 # Dictionary of atom types and their corresponding masses.
-atom_mass_dict = {
-    "H": 1.008,
-    "C": 12.011,
-    "N": 14.007,
-    "O": 15.999,
-    "P": 30.974,  # for DNA/RNA
-    "S": 32.066,
-}
+# atom_mass_dict = {
+#     "H": 1.008,
+#     "C": 12.011,
+#     "N": 14.007,
+#     "O": 15.999,
+#     "P": 30.974,  # for DNA/RNA
+#     "S": 32.066,
+# }
+
+atom_mass_dict = Dict()
+
+atom_mass_dict["H"] = 1.008
+atom_mass_dict["C"] = 12.011
+atom_mass_dict["N"] = 14.007
+atom_mass_dict["O"] = 15.999
+atom_mass_dict["P"] = 30.974
+atom_mass_dict["S"] = 32.066
 
 
-def get_atom_list(pdb_file):
+def get_atom_list(pdb_file, backbone_only=False):
     """
     Retrieve the coordinates and atom types from a PDB or CIF file.
 
@@ -36,10 +49,25 @@ def get_atom_list(pdb_file):
         st_parser = MMCIFParser(QUIET=True)
     structure = st_parser.get_structure("protein", pdb_file)
     atom_list = []
-    atom_type_list = []
-    for atom in structure.get_atoms():
-        atom_list.append(atom.get_coord())
-        atom_type_list.append(atom.element)
+    atom_type_list = List()
+
+    if backbone_only:
+        for model in structure:
+            for chain in model:
+                for residue in chain:
+                    if "CA" in residue and "C" in residue and "N" in residue:
+                        atom_list.append(residue["CA"].get_coord())
+                        atom_type_list.append(residue["CA"].element)
+                        atom_list.append(residue["C"].get_coord())
+                        atom_type_list.append(residue["C"].element)
+                        atom_list.append(residue["N"].get_coord())
+                        atom_type_list.append(residue["N"].element)
+                        # atom_list.append(residue["O"].get_coord())
+                        # atom_type_list.append(residue["O"].element)
+    else:
+        for atom in structure.get_atoms():
+            atom_list.append(atom.get_coord())
+            atom_type_list.append(atom.element)
     return np.array(atom_list), atom_type_list
 
 
@@ -68,10 +96,10 @@ def calculate_centre_of_mass(atom_list, atom_type_list):
 
 
 def prot2map(
-    atom_list,
-    atom_type_list,
-    voxel_size,
-    resolution=None,
+        atom_list,
+        atom_type_list,
+        voxel_size,
+        resolution=None,
 ):
     """
     Calculate the size and origin of a protein map based on the given atom list,
@@ -125,6 +153,7 @@ def prot2map(
     return (z_size, y_size, x_size), (x_origin, y_origin, z_origin)
 
 
+@njit(fastmath=True, nogil=True)
 def mapGridPosition(origin, voxel_size, box_size, atom_coord):
     """
     Maps the coordinates of an atom to the corresponding grid position in a voxel grid.
@@ -140,17 +169,25 @@ def mapGridPosition(origin, voxel_size, box_size, atom_coord):
 
     If the atom is outside the voxel grid, returns (0, 0, 0).
     """
-    x_pos = int(round((atom_coord[0] - origin[0]) / voxel_size[0], 0))
-    y_pos = int(round((atom_coord[1] - origin[1]) / voxel_size[1], 0))
-    z_pos = int(round((atom_coord[2] - origin[2]) / voxel_size[2], 0))
+
+    # NN interpolation
+    # x_pos = int(round((atom_coord[0] - origin[0]) / voxel_size[0], 0))
+    # y_pos = int(round((atom_coord[1] - origin[1]) / voxel_size[1], 0))
+    # z_pos = int(round((atom_coord[2] - origin[2]) / voxel_size[2], 0))
+
+    # No interpolation
+    x_pos = (atom_coord[0] - origin[0]) / voxel_size[0]
+    y_pos = (atom_coord[1] - origin[1]) / voxel_size[1]
+    z_pos = (atom_coord[2] - origin[2]) / voxel_size[2]
 
     if (box_size[2] > x_pos >= 0) and (box_size[1] > y_pos >= 0) and (box_size[0] > z_pos >= 0):
         return x_pos, y_pos, z_pos
     else:
-        return 0
+        return 0, 0, 0
 
 
-def make_atom_overlay_map(origin, voxel_size, box_size, atom_list, atom_type_list):
+@njit(fastmath=True, nogil=True)
+def make_atom_overlay_map(origin, voxel_size, box_size, atom_list, atom_type_list, atom_mass_dict):
     """
     Creates an atom overlay map based on the given parameters.
 
@@ -168,7 +205,28 @@ def make_atom_overlay_map(origin, voxel_size, box_size, atom_list, atom_type_lis
     for atom, atom_type in zip(atom_list, atom_type_list):
         pos = mapGridPosition(origin, voxel_size, box_size, atom)
         if pos:
-            map_data[pos[2], pos[1], pos[0]] += atom_mass_dict.get(atom_type, 0.0)
+            atom_mass = atom_mass_dict.get(atom_type, 0.0)
+            pos_x_0 = int(np.floor(pos[0]))
+            pos_y_0 = int(np.floor(pos[1]))
+            pos_z_0 = int(np.floor(pos[2]))
+            pos_x_1 = pos_x_0 + 1
+            pos_y_1 = pos_y_0 + 1
+            pos_z_1 = pos_z_0 + 1
+
+            a = pos_x_1 - pos[0]
+            b = pos_y_1 - pos[1]
+            c = pos_z_1 - pos[2]
+
+            # Trilinear interpolation to surrounding vertices
+            map_data[pos_z_0, pos_y_0, pos_x_0] += a * b * c * atom_mass
+            map_data[pos_z_1, pos_y_0, pos_x_0] += a * b * (1 - c) * atom_mass
+            map_data[pos_z_0, pos_y_1, pos_x_0] += a * (1 - b) * c * atom_mass
+            map_data[pos_z_0, pos_y_0, pos_x_1] += (1 - a) * b * c * atom_mass
+            map_data[pos_z_1, pos_y_1, pos_x_0] += a * (1 - b) * (1 - c) * atom_mass
+            map_data[pos_z_0, pos_y_1, pos_x_1] += (1 - a) * (1 - b) * c * atom_mass
+            map_data[pos_z_1, pos_y_0, pos_x_1] += (1 - a) * b * (1 - c) * atom_mass
+            map_data[pos_z_1, pos_y_1, pos_x_1] += (1 - a) * (1 - b) * (1 - c) * atom_mass
+
     return map_data
 
 
@@ -250,7 +308,7 @@ def normalize_map(map_data):
 
 def resample_by_box_size(data, box_size):
     """
-    Resamples the given data array to match the specified box size using spline interpolation.
+    Resamples the given data array to match the specified box size using cubic spline interpolation.
 
     Parameters:
         data (ndarray): The input data array.
@@ -264,7 +322,19 @@ def resample_by_box_size(data, box_size):
     return zoom(data, zoom_factor, order=3)
 
 
-def pdb2vol(input_pdb, output_mrc, resolution, ref_map=False, sigma_coeff=0.356, real_space=False, normalize=True):
+def pdb2vol(
+        input_pdb,
+        resolution,
+        output_mrc=None,
+        ref_map=False,
+        sigma_coeff=0.356,
+        real_space=False,
+        normalize=True,
+        backbone_only=False,
+        contour=False,
+        bin_mask=False,
+        return_data=False,
+):
     """
     Convert a PDB or CIF file to a volumetric map in MRC format.
 
@@ -293,7 +363,7 @@ def pdb2vol(input_pdb, output_mrc, resolution, ref_map=False, sigma_coeff=0.356,
 
     if input_pdb.split(".")[-1] not in ["pdb", "cif"]:
         raise ValueError("Input file must be a pdb or cif file")
-    atoms, types = get_atom_list(input_pdb)
+    atoms, types = get_atom_list(input_pdb, backbone_only=backbone_only)
 
     if len(atoms) == 0:
         raise ValueError("No atoms found in input file")
@@ -314,29 +384,71 @@ def pdb2vol(input_pdb, output_mrc, resolution, ref_map=False, sigma_coeff=0.356,
     y_s = int(dims[1] * voxel_size[1])
     z_s = int(dims[0] * voxel_size[0])
 
-    new_voxel_size = np.array([voxel_size[2] * dims[2] / x_s, voxel_size[1] * dims[1] / y_s, voxel_size[0] * dims[0] / z_s])
+    new_voxel_size = np.array(
+        [voxel_size[2] * dims[2] / x_s, voxel_size[1] * dims[1] / y_s, voxel_size[0] * dims[0] / z_s])
 
-    map_data = make_atom_overlay_map(origin, new_voxel_size, np.array((z_s, y_s, x_s)), atoms, types)
-    if real_space:
-        blurred_data = blur_map_real_space(map_data, resolution, sigma_coeff)
+    # print(new_voxel_size)
+
+    map_data = make_atom_overlay_map(origin, new_voxel_size, (z_s, y_s, x_s), atoms, types, atom_mass_dict)
+
+    if resolution * sigma_coeff / new_voxel_size[0] >= 1:
+        if real_space:
+            blurred_data = blur_map_real_space(map_data, resolution, sigma_coeff)
+        else:
+            blurred_data = blur_map(map_data, resolution, sigma_coeff)
     else:
-        blurred_data = blur_map(map_data, resolution, sigma_coeff)
+        print("Warning: Blurring will not be performed because the resolution is too high w.r.t. the voxel size.")
+        blurred_data = map_data  # no blurring
+
     blurred_data = resample_by_box_size(blurred_data, dims)
+
     if normalize:
         blurred_data = normalize_map(blurred_data)
-    write_mrc_file(blurred_data, origin, voxel_size, output_mrc)
+
+    if contour:
+        blurred_data = np.where(blurred_data > contour, blurred_data, 0)
+
+    if bin_mask:
+        # binarize to get a mask
+        blurred_data = np.where(blurred_data > 0, 1, 0)
+
+    if output_mrc is not None:
+        write_mrc_file(blurred_data, origin, voxel_size, output_mrc)
+
+    if return_data:
+        return blurred_data
 
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Convert a PDB or CIF file to a volumetric map in MRC format.')
-    parser.add_argument('input_pdb', help='Path to the input PDB or CIF file.')
-    parser.add_argument('output_mrc', help='Path to save the output MRC file.')
-    parser.add_argument('resolution', type=float, help='Resolution of the output map.')
-    parser.add_argument('-m', '--ref_map', help='Path to a reference map in MRC format.')
-    parser.add_argument('-s', '--sigma_coeff', type=float, default=0.356, help='Sigma coefficient for blurring.')
-    parser.add_argument('-r', '--real_space', action='store_true', default=False, help='Whether to perform real-space blurring.')
-    parser.add_argument('-n', '--normalize', action='store_true', default=True, help='Whether to normalize the output map.')
+
+    parser = argparse.ArgumentParser(description="Convert a PDB or CIF file to a volumetric map in MRC format.")
+    parser.add_argument("input_pdb", help="Path to the input PDB or CIF file.")
+    parser.add_argument("resolution", type=float, help="Resolution of the output map.")
+    parser.add_argument("output_mrc", help="Path to save the output MRC file.")
+    parser.add_argument("-m", "--ref_map", help="Path to a reference map in MRC format.", default=None)
+    parser.add_argument("-s", "--sigma_coeff", type=float, default=0.356, help="Sigma coefficient for blurring.")
+    parser.add_argument("-r", "--real_space", action="store_true", default=False,
+                        help="Whether to perform real-space blurring.")
+    parser.add_argument("-n", "--normalize", action="store_true", default=True,
+                        help="Whether to normalize the output map.")
+    parser.add_argument("-bb", "--backbone_only", action="store_true", default=False,
+                        help="Whether to only consider backbone atoms.")
+    parser.add_argument("-b", "--bin_mask", action="store_true", default=False,
+                        help="Whether to binarize the output map.")
+    parser.add_argument("-c", "--contour", type=float, default=0.0, help="Contour level for contouring the output map.")
     args = parser.parse_args()
 
-    pdb2vol(args.input_pdb, args.output_mrc, args.resolution, args.ref_map, args.sigma_coeff, args.real_space, args.normalize)
+    pdb2vol(
+        args.input_pdb,
+        args.resolution,
+        args.output_mrc,
+        args.ref_map,
+        args.sigma_coeff,
+        args.real_space,
+        args.normalize,
+        args.backbone_only,
+        args.contour,
+        args.bin_mask,
+        False,
+    )
