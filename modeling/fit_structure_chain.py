@@ -2,7 +2,8 @@ from ops.os_operation import mkdir,functToDeleteItems
 from modeling.pdb_utils import filter_backbone,generate_move_structure
 import os
 from graph.build_ldp import build_ldp
-from ops.map_utils import SimuMap1A
+#from ops.map_utils import SimuMap1A
+from ops.pdb2vol import pdb2vol
 import shutil
 from ops.io_utils import load_pickle,write_pickle
 from modeling.score_utils import read_score
@@ -38,7 +39,8 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
         fit_target_map_list = root_fit_target_list
         #generate simulated map from the pdb
         gen_reso_map_path = os.path.join(fitting_dir,"simumap_backbone_1A_%s.mrc"%tmp_chain)
-        SimuMap1A(backbone_pdb,gen_reso_map_path)
+        pdb2vol(backbone_pdb,resolution=1.0,output_mrc=gen_reso_map_path,normalize=True)
+        #SimuMap1A(backbone_pdb,gen_reso_map_path)
         vesper_script = os.path.join(os.getcwd(),"VESPER_CUDA")
         vesper_script = os.path.join(vesper_script,"main.py")
         if not os.path.exists(vesper_script):
@@ -112,8 +114,8 @@ def fit_single_chain(input_map_path,input_pdb_path,output_dir,ldp_pdb_path,param
     filter_backbone(input_pdb_path,backbone_pdb)
 
     gen_reso_map_path = os.path.join(output_dir,"simumap_backbone_1A.mrc")
-    SimuMap1A(backbone_pdb,gen_reso_map_path)
-
+    #SimuMap1A(backbone_pdb,gen_reso_map_path)
+    pdb2vol(backbone_pdb,resolution=1.0,output_mrc=gen_reso_map_path,normalize=True)
     kernel_size=2
     voxel_spacing =  2
 
