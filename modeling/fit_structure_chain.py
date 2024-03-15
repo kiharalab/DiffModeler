@@ -7,7 +7,7 @@ from ops.pdb2vol import pdb2vol
 import shutil
 from ops.io_utils import load_pickle,write_pickle
 from modeling.score_utils import read_score
-from modeling.map_utils import mask_map_by_pdb,format_map
+from modeling.map_utils import mask_map_by_pdb,format_map,mask_map_by_pdb_slow
 import torch
 
 def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
@@ -101,7 +101,10 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
                 diff_map_path_new = os.path.join(cur_fit_dir,"iterative_%d.mrc"%k)
                 if not os.path.exists(diff_map_path_new):
                     diff_map_path_tmp = os.path.join(cur_fit_dir,"iterative_%d_tmp.mrc"%k)
-                    mask_map_by_pdb(fit_target_map,diff_map_path_tmp,top_fitpdb_path,keep_label=False)
+                    try:
+                        mask_map_by_pdb(fit_target_map,diff_map_path_tmp,top_fitpdb_path,keep_label=False)
+                    except:
+                        mask_map_by_pdb_slow(input_map_path,diff_map_path_tmp,top_fitpdb_path,cutoff=2,keep_label=False)
                     format_map(diff_map_path_tmp,diff_map_path_new)
                 new_fit_target_map_list.append(diff_map_path_new)
             fit_target_map_list = new_fit_target_map_list
