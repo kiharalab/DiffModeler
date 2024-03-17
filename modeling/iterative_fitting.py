@@ -3,7 +3,7 @@ from ops.os_operation import mkdir
 from modeling.score_utils import sort_dict_by_value_desc,clean_score_dict,find_biggest_unvisited_chain
 from modeling.pdb_utils import find_identical_chain,find_chain_pdb_path,remove_overlap_pdb,rename_chains_cif,calculate_overlap_score
 from modeling.fit_structure_chain import fit_single_chain
-from modeling.map_utils import mask_map_by_pdb,segment_map,format_map
+from modeling.map_utils import mask_map_by_pdb,segment_map,format_map,mask_map_by_pdb_slow
 from modeling.pdb_utils import extract_residue_locations
 import shutil
 from ops.io_utils import write_pickle
@@ -92,7 +92,11 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     mkdir(current_output_dir)
     print("score %.2f: local refinment!"%(current_score))
     segment_map_path0 = os.path.join(current_output_dir,"segment_map_tmp.mrc")
-    mask_map_by_pdb(diff_trace_map,segment_map_path0,current_fitpdb_path,keep_label=True)
+    try:
+        mask_map_by_pdb(diff_trace_map,segment_map_path0,current_fitpdb_path,keep_label=True)
+    except:
+        print("mask map by pdb failed, use slow version")
+        mask_map_by_pdb_slow(diff_trace_map,segment_map_path0,current_fitpdb_path,cutoff=10,keep_label=True)
     segment_map_path0 = format_map(segment_map_path0,os.path.join(current_output_dir,"segment_map.mrc"))
     segment_map_path = os.path.join(current_output_dir,"segment_map_small.mrc")
     segment_map(segment_map_path0,segment_map_path)
@@ -122,12 +126,19 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     #mask map and map ldp according to fitted structure.
     diff_traced_map_new = os.path.join(current_output_dir,"iterative_%s.mrc"%current_assign_chain)
     diff_traced_map_tmp = os.path.join(current_output_dir,"iterative_%s_tmp.mrc"%current_assign_chain)
-    mask_map_by_pdb(diff_trace_map,diff_traced_map_tmp,final_pdb_output,keep_label=False)
+    try:
+        mask_map_by_pdb(diff_trace_map,diff_traced_map_tmp,final_pdb_output,keep_label=False)
+    except:
+        mask_map_by_pdb_slow(diff_trace_map,diff_traced_map_tmp,final_pdb_output,keep_label=False)
     format_map(diff_traced_map_tmp,diff_traced_map_new)
 
     diff_ldpmap_path_new = os.path.join(current_output_dir,"iterativeLDP_%s.mrc"%current_assign_chain)
     diff_ldpmap_path_tmp = os.path.join(current_output_dir,"iterativeLDP_%s.mrc"%current_assign_chain)
-    mask_map_by_pdb(diff_ldpmap_path,diff_ldpmap_path_tmp,final_pdb_output,keep_label=False)
+    try:
+        mask_map_by_pdb(diff_ldpmap_path,diff_ldpmap_path_tmp,final_pdb_output,keep_label=False)
+    except:
+        print("mask map by pdb failed, use slow version")
+        mask_map_by_pdb_slow(diff_ldpmap_path,diff_ldpmap_path_tmp,final_pdb_output,keep_label=False)
     format_map(diff_ldpmap_path_tmp,diff_ldpmap_path_new)
 
     clash_distance= params['assembling']['clash_distance']
