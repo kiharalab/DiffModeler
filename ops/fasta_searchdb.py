@@ -73,7 +73,7 @@ def download_pdb(pdb_id, current_chain_dir, final_pdb_path):
 
 def get_metadata(pdb_id, max_retry, type):
     if type == "pdb":
-        url = f"https://data.rcsb.org/rest/v1/core/entry/{pdb_id}"
+        url = f"https://www.ebi.ac.uk/pdbe/api/pdb/entry/residue_listing/{pdb_id}"
     elif type == "afdb":
         url = f"https://alphafold.ebi.ac.uk/api/uniprot/summary/{pdb_id}.json"
     print("fetching metadata from %s" % url)
@@ -193,11 +193,20 @@ def fasta_searchdb(params, save_path):
                         print("get metadata failed for %s" % pdb_id)
                         actual_structure_length = 0
                 else:
-                    metadata = get_metadata(match_id.split("_")[0], 3, "pdb")
+                    # metadata = get_metadata(match_id.split("_")[0], 3, "pdb")
                     try:
-                        actual_structure_length = metadata["rcsb_entry_info"]["deposited_polymer_monomer_count"]
+                        download_pdb(match_id, current_chain_dir, final_pdb_path)
+                        actual_structure_length = count_residues(final_pdb_path)
+                        os.remove(final_pdb_path)
+                        functToDeleteItems(current_chain_dir)
+                        # chains = metadata[match_id.split("_")[0]]['molecules'][0]['chains']
+                        # actual_structure_length = 0
+                        # for chain in chains:
+                        #     if chain["chain_id"] == match_id.split("_")[1]:
+                        #         # get length of modeled region only
+                        #         actual_structure_length = len([res for res in chain["residues"] if res["observed_ratio"] > 0.0])
                     except:
-                        print("get metadata failed for %s" % match_id)
+                        # print("get metadata failed for %s" % match_id)
                         actual_structure_length = 0
 
                 if k == 0:
@@ -220,7 +229,7 @@ def fasta_searchdb(params, save_path):
                     num_res_difference = curr_seq_length_diff
                     closest_choice = match_id
 
-            # print("Closest choice is %s with %d difference" % (closest_choice))
+            print("Closest choice is %s with %d difference" % (closest_choice))
 
             if key not in matched_dict:  # no match under length condition
                 if params['af_only'] and closest_choice is None:
