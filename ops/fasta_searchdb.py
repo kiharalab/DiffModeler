@@ -71,9 +71,9 @@ def download_pdb(pdb_id, current_chain_dir, final_pdb_path):
     return final_pdb_path
 
 
-def get_metadata(pdb_id, max_retry, type):
+def get_metadata(pdb_id, max_retry, type, chain_id=None):
     if type == "pdb":
-        url = f"https://www.ebi.ac.uk/pdbe/api/pdb/entry/residue_listing/{pdb_id}"
+        url = f"https://www.ebi.ac.uk/pdbe/api/pdb/entry/polymer_coverage/{pdb_id}/chain/{chain_id}"
     elif type == "afdb":
         url = f"https://alphafold.ebi.ac.uk/api/uniprot/summary/{pdb_id}.json"
     print("fetching metadata from %s" % url)
@@ -193,18 +193,16 @@ def fasta_searchdb(params, save_path):
                         print("get metadata failed for %s" % pdb_id)
                         actual_structure_length = 0
                 else:
-                    # metadata = get_metadata(match_id.split("_")[0], 3, "pdb")
+                    metadata = get_metadata(match_id.split("_")[0], 3, "pdb", match_id.split("_")[1])
                     try:
-                        download_pdb(match_id, current_chain_dir, final_pdb_path)
-                        actual_structure_length = count_residues(final_pdb_path)
-                        os.remove(final_pdb_path)
-                        functToDeleteItems(current_chain_dir)
-                        # chains = metadata[match_id.split("_")[0]]['molecules'][0]['chains']
-                        # actual_structure_length = 0
-                        # for chain in chains:
-                        #     if chain["chain_id"] == match_id.split("_")[1]:
-                        #         # get length of modeled region only
-                        #         actual_structure_length = len([res for res in chain["residues"] if res["observed_ratio"] > 0.0])
+                        actual_structure_length = 0
+                        segments = metadata[match_id.split("_")[0].lower()]["molecules"][0]["chains"][0]["observed"]
+                        for segment in segments:
+                            actual_structure_length += segment["end"]["residue_number"] - segment["start"]["residue_number"] + 1
+                        # download_pdb(match_id, current_chain_dir, final_pdb_path)
+                        # actual_structure_length = count_residues(final_pdb_path)
+                        # os.remove(final_pdb_path)
+                        # functToDeleteItems(current_chain_dir)
                     except:
                         # print("get metadata failed for %s" % match_id)
                         actual_structure_length = 0
