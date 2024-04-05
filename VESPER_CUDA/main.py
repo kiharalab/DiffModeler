@@ -58,6 +58,8 @@ if __name__ == "__main__":
     orig.add_argument("-ldp", type=str, default=None, help="Path to the local dense point file def=None")
     orig.add_argument("-ca", type=str, default=None, help="Path to the CA file def=None")
     orig.add_argument("-pdbin", type=str, default=None, help="Input PDB file to be transformed def=None")
+    orig.add_argument("-bbonly", type=bool, default=False,
+                      help="Whether to only use backbone atoms for simulated map def=false")
     orig.add_argument("-mrcout", action="store_true", default=False, help="Output the transformed query map def=false")
     orig.add_argument("-c", type=int, default=2, help="Number of threads to use def=2")
     orig.add_argument("-al", type=float, default=None, help="Angle limit for searching def=None")
@@ -94,6 +96,8 @@ if __name__ == "__main__":
     # prob.add_argument("-R", type=float, default=0.0, help="Threshold for probability values def=0.0")
     ss.add_argument("-gpu", type=int, help="GPU ID to use for CUDA acceleration def=0")
     ss.add_argument("-pdbin", type=str, default=None, help="Input PDB file to be transformed def=None")
+    ss.add_argument("-bbonly", type=bool, default=False,
+                      help="Whether to only use backbone atoms for simulated map def=false")
     ss.add_argument("-c", type=int, default=2, help="Number of threads to use def=2")
     ss.add_argument(
         "-res", type=float, default=None,
@@ -121,7 +125,7 @@ if __name__ == "__main__":
         assert args.res is not None, "Please specify resolution when using structure as input."
         # simulate the map at target resolution
         sim_map_path = os.path.join(tempfile.gettempdir(), f"simu_map_{rand_str}.mrc")
-        pdb2vol(args.b, args.res, sim_map_path, backbone_only=True)
+        pdb2vol(args.b, args.res, sim_map_path, backbone_only=args.bbonly)
         assert os.path.exists(sim_map_path), "Failed to create simulated map from structure."
 
         # generate secondary structure assignment for the simulated map if using ss mode

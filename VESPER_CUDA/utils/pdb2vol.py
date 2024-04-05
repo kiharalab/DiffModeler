@@ -30,6 +30,9 @@ atom_mass_dict["O"] = 15.999
 atom_mass_dict["P"] = 30.974
 atom_mass_dict["S"] = 32.066
 
+phos_backbone_atom_id = ["O5\'", "O3\'", "P", "OP1", "OP2"]
+sugar_ring_atom_id = ["C5\'", "C4\'", "C3\'", "C2\'", "C1\'", "O4\'", "O2\'"]
+
 
 def get_atom_list(pdb_file, backbone_only=False):
     """
@@ -47,7 +50,13 @@ def get_atom_list(pdb_file, backbone_only=False):
         st_parser = PDBParser(QUIET=True)
     elif pdb_file.endswith(".cif"):
         st_parser = MMCIFParser(QUIET=True)
-    structure = st_parser.get_structure("protein", pdb_file)
+    else:
+        raise Exception("Input structure file in not in PDB/mmCIF format.")
+    try:
+        structure = st_parser.get_structure("protein", pdb_file)
+    except:
+        raise Exception("Structure file reading error.")
+
     atom_list = []
     atom_type_list = List()
 
@@ -64,6 +73,17 @@ def get_atom_list(pdb_file, backbone_only=False):
                         atom_type_list.append(residue["N"].element)
                         # atom_list.append(residue["O"].get_coord())
                         # atom_type_list.append(residue["O"].element)
+                        res_type = "prot"
+                    if all([a in residue for a in phos_backbone_atom_id]):
+                        for a in phos_backbone_atom_id:
+                            atom_list.append(residue[a].get_coord())
+                            atom_type_list.append(residue[a].element)
+                        res_type = "nuc"
+                    if all([a in residue for a in sugar_ring_atom_id]):
+                        for a in sugar_ring_atom_id:
+                            atom_list.append(residue[a].get_coord())
+                            atom_type_list.append(residue[a].element)
+                        res_type = "nuc"
     else:
         for atom in structure.get_atoms():
             atom_list.append(atom.get_coord())
