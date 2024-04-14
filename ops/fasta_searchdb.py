@@ -226,8 +226,8 @@ def fasta_searchdb(params, save_path):
                 if curr_seq_length_diff < num_res_difference:
                     num_res_difference = curr_seq_length_diff
                     closest_choice = match_id
-
-            print("Closest choice is %s with %d difference" % (closest_choice))
+            if closest_choice is not None:
+                print("Closest choice is %s with %d difference" % (closest_choice,num_res_difference))
 
             if key not in matched_dict:  # no match under length condition
                 if params['af_only'] and closest_choice is None:
