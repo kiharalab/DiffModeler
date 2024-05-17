@@ -109,6 +109,23 @@ if __name__ == "__main__":
         if params['seq_search']:
             print("sequence search finished!")
             exit()
+    elif params['mode']==3:
+        #support fasta+template mixed mode. Will first check if template is provided, will use the provided one first. Then for remained results, do db search
+        fitting_dict = construct_single_chain_candidate(params,save_path)
+        params['fasta_path'] = os.path.abspath(params['fasta_path'])
+        from ops.fasta_utils import read_fasta
+        chain_dict = read_fasta(params['fasta_path'])
+        refined_fasta_path = os.path.join(save_path,"refined_input.fasta")
+        from ops.fasta_utils import refine_fasta_input
+        fitting_dict = refine_fasta_input(chain_dict,fitting_dict,refined_fasta_path)
+        print("updated fitting_dict:",fitting_dict)
+        params['P']=refined_fasta_path
+        from ops.fasta_searchdb import fasta_searchdb
+        additional_fitting_dict = fasta_searchdb(params,save_path)
+        #merge two fitting dict
+        for key in additional_fitting_dict:
+            fitting_dict[key]=additional_fitting_dict[key]
+        print("final fitting dict:",fitting_dict)
     else:
         print("mode %d is not supported!"%params['mode'])
         exit()

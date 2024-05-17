@@ -85,3 +85,66 @@ def write_all_fasta(chain_dict,output_path):
             for item in fasta_list:
                 wfile.write(item)
             wfile.write("\n")
+
+def refine_fasta_input(chain_dict,fitting_dict,refined_fasta_path):
+    #check if chain in chain_dict is in fitting_dict
+    #if not, remove it from chain_dict
+    #if yes, write it to refined_fasta_path
+    input_chain_list=list(chain_dict.keys())
+    all_chain_list=[]
+    for chain in input_chain_list:
+        cur_chain_list = chain.split(",")
+        for item in cur_chain_list:
+            if len(item)>0:
+                all_chain_list.append(item)
+    print("all input chain list:",all_chain_list)
+    use_chain_list=[]
+    for fitting_path in fitting_dict:
+        current_chain_list = fitting_dict[fitting_path] 
+        for chain_id in current_chain_list:
+            if chain_id in all_chain_list:
+                use_chain_list.append(chain_id)
+    print("use_chain_list:",use_chain_list)
+    final_fitting_dict= {k:v for k,v in fitting_dict.items()}
+    refined_chain_dict=defaultdict(list)
+    for chain_list in chain_dict:
+        cur_chain_list = chain_list.split(",")
+        current_use_chain_list = []
+        for item in cur_chain_list:
+            if item in use_chain_list:
+                current_use_chain_list.append(item)
+        if len(current_use_chain_list)==0:
+            refined_chain_dict[chain_list]=chain_dict[chain_list]
+        else:
+            if len(current_use_chain_list)==len(cur_chain_list):
+                print("chain have been put into template",cur_chain_list)
+            else:
+                #some chains are indicated in the sequence but only one put into template, automatic match
+                #add that missed chain into the template dict
+                extra_chain_info = []
+                for item in cur_chain_list:
+                    if item not in current_use_chain_list:
+                        extra_chain_info.append(item)
+                print("extra unmatched chain info:",extra_chain_info)
+                match_flag =False
+                #update fitting dict
+                for fitting_path in fitting_dict:
+                    cur_fit_chain_list = fitting_dict[fitting_path]
+                    cur_match_chain_list=[]
+                    for item in cur_fit_chain_list:
+                        if item in current_use_chain_list:
+                            cur_match_chain_list.append(item)
+                    #allow template to have more matches.
+                    if len(cur_match_chain_list)==len(current_use_chain_list):
+                        print("successfully match ",cur_match_chain_list,current_use_chain_list)
+                        combine_chain_list = cur_chain_list+cur_fit_chain_list
+                        combine_chain_list = list(set(combine_chain_list))
+                        final_fitting_dict[fitting_path]=combine_chain_list
+                        match_flag=True
+                        break
+                if match_flag is False:
+                    print("can not find match for ",current_use_chain_list)
+                    refined_chain_dict[chain_list]=chain_dict[chain_list]
+    write_all_fasta(refined_chain_dict,refined_fasta_path)
+    return final_fitting_dict
+
