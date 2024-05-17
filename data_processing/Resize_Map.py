@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import argparse
+import os
 
 def my_reform_1a(input_mrc, output_mrc, use_gpu=False):
 
@@ -11,7 +12,10 @@ def my_reform_1a(input_mrc, output_mrc, use_gpu=False):
         with mrcfile.open(input_mrc, permissive=True) as orig_map:
 
             orig_voxel_size = np.array([orig_map.voxel_size.x, orig_map.voxel_size.y, orig_map.voxel_size.z])
-
+            if orig_voxel_size[0]==1 and orig_voxel_size[1]==1 and orig_voxel_size[2]==1:
+                os.symlink(input_mrc,output_mrc)
+                #save time for 1*1*1 grid size map
+                return
             orig_data = torch.from_numpy(orig_map.data.copy()).unsqueeze(0).unsqueeze(0)
 
             orig_data = orig_data.cuda() if use_gpu else orig_data
