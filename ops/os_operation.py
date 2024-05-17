@@ -7,7 +7,7 @@ def mkdir(path):
     isExists = os.path.exists(path)
     if not isExists:
         print(path + " created")
-        os.makedirs(path)
+        os.makedirs(path,exist_ok=True)
         return True
     else:
         print(path + ' existed')

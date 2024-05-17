@@ -13,6 +13,8 @@ def my_reform_1a(input_mrc, output_mrc, use_gpu=False):
 
             orig_voxel_size = np.array([orig_map.voxel_size.x, orig_map.voxel_size.y, orig_map.voxel_size.z])
             if orig_voxel_size[0]==1 and orig_voxel_size[1]==1 and orig_voxel_size[2]==1:
+                if os.path.exists(output_mrc):
+                    os.remove(output_mrc)
                 os.symlink(input_mrc,output_mrc)
                 #save time for 1*1*1 grid size map
                 return

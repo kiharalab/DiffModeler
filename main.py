@@ -71,15 +71,15 @@ def diffusion_trace_map(save_path,cur_map_path,params):
 def construct_single_chain_candidate(params,save_path):
     #first build a dict from the input text configure file
     single_chain_pdb_input = os.path.abspath(params['P'])
-
+    single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
+    if os.path.exists(single_chain_pdb_dir):
+        shutil.rmtree(single_chain_pdb_dir)
     if not os.path.isdir(single_chain_pdb_input):
-        single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
         from ops.os_operation import extract_compressed_file
         single_chain_pdb_dir=extract_compressed_file(single_chain_pdb_input,single_chain_pdb_dir)
-
     else:
         from ops.os_operation import copy_directory
-        single_chain_pdb_dir = copy_directory(single_chain_pdb_input,os.path.join(save_path,"single_chain_pdb"))
+        single_chain_pdb_dir = copy_directory(single_chain_pdb_input,single_chain_pdb_dir)
     from ops.io_utils import read_structure_txt
     fitting_dict = read_structure_txt(single_chain_pdb_dir,os.path.abspath(params['M']))
     return fitting_dict
