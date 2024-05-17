@@ -19,7 +19,8 @@ def read_structure_txt(input_dir,input_file_path):
     print("structure waiting to be fitted: ",structure_dict)
     if len(structure_dict)==0:
         print("No templated is found by the config file!!!")
-        exit()
+        #exit()
+        return {}
     return structure_dict
 import pickle
 def load_pickle(path):

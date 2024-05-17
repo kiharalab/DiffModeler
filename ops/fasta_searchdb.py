@@ -102,6 +102,8 @@ def fasta_searchdb(params, save_path):
     # reorganize data
     fasta_path = os.path.abspath(params['P'])
     chain_dict = read_fasta(fasta_path)
+    if len(chain_dict)==0:
+        return {}
     fasta_path = os.path.join(single_chain_pdb_dir, "input.fasta")
     write_all_fasta(chain_dict, fasta_path)
 
