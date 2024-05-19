@@ -343,7 +343,7 @@ def cif2pdb(input_cif_path,final_pdb_path):
                     if current_atom_index>9999999:
                         current_atom_index=9999999
                     wline=""
-                    wline += "ATOM%7d %-4s %3s%2s%4d    " % (current_atom_index, current_atom_name,
+                    wline += "ATOM%7d  %-3s %3s%2s%4d    " % (current_atom_index, current_atom_name,
                                                              current_res_name, current_chain,current_res_index)
                     wline = wline + "%8.3f%8.3f%8.3f%6.2f\n" % (current_x,current_y,current_z, 1.0)
                     wfile.write(wline)
