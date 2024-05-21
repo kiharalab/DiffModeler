@@ -64,4 +64,8 @@ def infer_diffem(input_map_path,save_dir,params):
     final_map_path = os.path.join(final_save_path,"sample_%d"%max_id)
     final_map_path = os.path.join(final_map_path,"sample_%d_c0_mask.mrc"%max_id)
     shutil.copy(final_map_path,final_diffusion_path)
+
+    #clean input and box dir, only keep the final map output to save disk space
+    shutil.rmtree(save_input_dir)
+    shutil.rmtree(save_diffusion_path)
     return final_diffusion_path
