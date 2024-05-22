@@ -242,8 +242,11 @@ def gen_npy(pdb_path, sample_res, npy_path=None, verbose=False):
     # get stem of pdb file
     pdb_stem = str(pathlib.Path(pdb_path).stem)
     tmp_dir = f"./{tempfile.gettempdir()}/{pdb_stem}/"
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
+    try:
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+    except:
+        pass
     os.makedirs(tmp_dir, exist_ok=True)
 
     pdb_dir = os.path.join(tmp_dir, "pdb")

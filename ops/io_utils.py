@@ -66,3 +66,11 @@ def download_file(url,file):
             except:
                 return False
     return True
+
+
+def delete_dir(input_dir):
+    try:
+        if os.path.exists(input_dir):
+            shutil.rmtree(input_dir)
+    except:
+        print("Fail to delete %s"%input_dir)

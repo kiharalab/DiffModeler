@@ -9,6 +9,7 @@ from data_processing.Test_Dataset import Single_Dataset
 import torch
 from predict.output_utils import merge_diffusion_map
 from predict.infer_batch import infer_batch
+from ops.io_utils import delete_dir
 def infer_diffem(input_map_path,save_dir,params):
     mkdir(save_dir)
     final_diffusion_path = os.path.join(save_dir,"trace_backbone.mrc")
@@ -66,6 +67,8 @@ def infer_diffem(input_map_path,save_dir,params):
     shutil.copy(final_map_path,final_diffusion_path)
 
     #clean input and box dir, only keep the final map output to save disk space
-    shutil.rmtree(save_input_dir)
-    shutil.rmtree(save_diffusion_path)
+    #shutil.rmtree(save_input_dir)
+    #shutil.rmtree(save_diffusion_path)
+    delete_dir(save_input_dir)
+    delete_dir(save_diffusion_path)
     return final_diffusion_path

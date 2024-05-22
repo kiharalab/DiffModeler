@@ -67,13 +67,14 @@ def diffusion_trace_map(save_path,cur_map_path,params):
     diff_new_trace_map = os.path.join(save_path,"diffusion.mrc")
     segment_map(diff_trace_map,diff_new_trace_map,contour=0)
     return diff_new_trace_map
-
+from ops.io_utils import delete_dir
 def construct_single_chain_candidate(params,save_path):
     #first build a dict from the input text configure file
     single_chain_pdb_input = os.path.abspath(params['P'])
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
-    if os.path.exists(single_chain_pdb_dir):
-        shutil.rmtree(single_chain_pdb_dir)
+    #if os.path.exists(single_chain_pdb_dir):
+        #shutil.rmtree(single_chain_pdb_dir)
+    delete_dir(single_chain_pdb_dir)
     if not os.path.isdir(single_chain_pdb_input):
         from ops.os_operation import extract_compressed_file
         single_chain_pdb_dir=extract_compressed_file(single_chain_pdb_input,single_chain_pdb_dir)
