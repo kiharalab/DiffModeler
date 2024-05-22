@@ -25,6 +25,7 @@ atom_mass_dict = Dict()
 
 atom_mass_dict["H"] = 1.008
 atom_mass_dict["C"] = 12.011
+atom_mass_dict["CA"] = 12.011  # for PDB files without element notations
 atom_mass_dict["N"] = 14.007
 atom_mass_dict["O"] = 15.999
 atom_mass_dict["P"] = 30.974
