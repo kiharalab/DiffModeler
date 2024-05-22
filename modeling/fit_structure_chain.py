@@ -53,8 +53,21 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
             score_path = os.path.join(cur_fit_dir,"score.pkl")
             # listfiles = [x for x in os.listdir(cur_fit_dir) if "vesper" in x and ".pdb" in x
             #      and "output" not in x and ".txt" not in x]
-
-            if not os.path.exists(score_path):
+            run_fit_flag = True
+            if os.path.exists(score_path):
+                try:
+                    new_score_dict = load_pickle(score_path)
+                    current_file_name=list(new_score_dict.keys())[0]
+                    current_fitpdb_path = os.path.join(cur_fit_dir,current_file_name)
+                    new_score = new_score_dict[current_file_name]
+                    print("top global fitting score %.2f "%(new_score))
+                    top_fitpdb_path =  os.path.join(cur_fit_dir,"top1.pdb")
+                    shutil.copy(current_fitpdb_path,top_fitpdb_path)
+                    run_fit_flag = False
+                except:
+                    print("error in reading score file %s"%score_path)
+                    print("rerun the fitting")
+            if run_fit_flag:
                 functToDeleteItems(cur_fit_dir)
                 #count_model=0
                 new_score_dict={}
@@ -86,14 +99,8 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
                 print("top global fitting score %.2f "%(new_score))
                 top_fitpdb_path =  os.path.join(cur_fit_dir,"top1.pdb")
                 shutil.copy(current_fitpdb_path,top_fitpdb_path)
-            else:
-                new_score_dict = load_pickle(score_path)
-                current_file_name=list(new_score_dict.keys())[0]
-                current_fitpdb_path = os.path.join(cur_fit_dir,current_file_name)
-                new_score = new_score_dict[current_file_name]
-                print("top global fitting score %.2f "%(new_score))
-                top_fitpdb_path =  os.path.join(cur_fit_dir,"top1.pdb")
-                shutil.copy(current_fitpdb_path,top_fitpdb_path)
+    
+                
 
             #apply mask
             new_fit_target_map_list=[]
