@@ -55,13 +55,15 @@ def get_atom_list(pdb_file, backbone_only=False):
         for model in structure:
             for chain in model:
                 for residue in chain:
-                    if "CA" in residue and "C" in residue and "N" in residue:
+                    if "CA" in residue:
                         atom_list.append(residue["CA"].get_coord())
                         atom_type_list.append(residue["CA"].element)
-                        atom_list.append(residue["C"].get_coord())
-                        atom_type_list.append(residue["C"].element)
-                        atom_list.append(residue["N"].get_coord())
-                        atom_type_list.append(residue["N"].element)
+                        if "C" in residue:
+                            atom_list.append(residue["C"].get_coord())
+                            atom_type_list.append(residue["C"].element)
+                        if "N" in residue:
+                            atom_list.append(residue["N"].get_coord())
+                            atom_type_list.append(residue["N"].element)
                         # atom_list.append(residue["O"].get_coord())
                         # atom_type_list.append(residue["O"].element)
     else:
