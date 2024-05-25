@@ -55,9 +55,11 @@ def read_score(new_score_dict,pdb_dir,output_path):
                 score=float(line.strip("\n").replace("LDP Recall Score:",""))
                 list_score.append(score)
 
-    assert len(list_score)==len(listoldpdb)
+    #assert len(list_score)==len(listoldpdb) #this will raise error if two jobs parallel run on the same dir for same target
+
     for kk in range(len(list_score)):
         pdb_path = os.path.join(pdb_dir,"#%d.pdb"%kk)
+        assert os.path.exists(pdb_path)
         score= list_score[kk]
         new_score_dict[pdb_path]=score*100
     new_score_dict=sort_dict_by_value_desc(new_score_dict)
