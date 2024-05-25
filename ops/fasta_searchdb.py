@@ -98,7 +98,16 @@ def fasta_searchdb(params, save_path):
     fitting_pickle_path = os.path.join(save_path, "fitting_dict.pkl")
     if os.path.exists(fitting_pickle_path) and os.path.getsize(fitting_pickle_path) > 10:
         fitting_dict = load_pickle(fitting_pickle_path)
-        return fitting_dict
+        #check all the path exists, otherwise do not allow skip
+        use_flag=True
+        for key in fitting_dict:
+            if not os.path.exists(key):
+                use_flag=False
+                break
+        if use_flag:
+            return fitting_dict
+        else:
+            print("some of the pdb files in the dict are missing, re-searching")
     # reorganize data
     fasta_path = os.path.abspath(params['P'])
     chain_dict = read_fasta(fasta_path)

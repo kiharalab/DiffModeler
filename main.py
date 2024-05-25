@@ -74,7 +74,7 @@ def construct_single_chain_candidate(params,save_path):
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
     #if os.path.exists(single_chain_pdb_dir):
         #shutil.rmtree(single_chain_pdb_dir)
-    delete_dir(single_chain_pdb_dir)
+    #delete_dir(single_chain_pdb_dir)
     if not os.path.isdir(single_chain_pdb_input):
         from ops.os_operation import extract_compressed_file
         single_chain_pdb_dir=extract_compressed_file(single_chain_pdb_input,single_chain_pdb_dir)
