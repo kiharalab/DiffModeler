@@ -305,6 +305,15 @@ def cif2pdb(input_cif_path,final_pdb_path):
     x_ids = block_list.index("_atom_site.Cartn_x")
     y_ids = block_list.index("_atom_site.Cartn_y")
     z_ids = block_list.index("_atom_site.Cartn_z")
+    try:
+        occu_ids= block_list.index['_atom_site.occupancy']
+    except:
+        occu_ids = -1
+    try:
+        bfactor_index = block_list.index['_atom_site.B_iso_or_equiv']
+    except:
+        bfactor_index = -1
+    
     tmp_chain_list=[chr(i) for i in range(ord('A'), ord('Z') + 1)]  # uppercase letters
     tmp_chain_list.extend([chr(i) for i in range(ord('a'), ord('z') + 1)])  # lowercase letters
     #pre filter chain name list
@@ -342,10 +351,18 @@ def cif2pdb(input_cif_path,final_pdb_path):
                         current_res_index=9999
                     if current_atom_index>9999999:
                         current_atom_index=9999999
+                    if occu_ids!=-1:
+                        current_occupency = float(split_info[occu_ids])
+                    else:
+                        current_occupency = 1.0
+                    if bfactor_index!=-1:
+                        current_bfactor = float(split_info[bfactor_index])
+                    else:
+                        current_bfactor = 1.0
                     wline=""
                     wline += "ATOM%7d  %-3s %3s%2s%4d    " % (current_atom_index, current_atom_name,
                                                              current_res_name, current_chain,current_res_index)
-                    wline = wline + "%8.3f%8.3f%8.3f%6.2f\n" % (current_x,current_y,current_z, 1.0)
+                    wline = wline + "%8.3f%8.3f%8.3f%6.2f%6.2f\n" % (current_x,current_y,current_z, current_occupency,current_bfactor)
                     wfile.write(wline)
 def filter_chain_pdb(pdb_file_path, chain_name, output_file_path):
     """
@@ -402,3 +419,15 @@ def count_residues(input_pdb_path):
                     count_res+=1
                 prev_nuc_id=nuc_id
     return count_res
+
+def rewrite_pdb_occupency(pdb_path,new_pdb_path,score):
+    score = float(score)
+    with open(pdb_path,'r') as rfile:
+        with open(new_pdb_path,'w') as wfile:
+            for line in rfile:
+                if line.startswith("ATOM") or line.startswith("HETATM"):
+                    #must use index to change
+                    line = line[:54]+"%6.2f"%score+line[60:]
+                else:
+                    wfile.write(line)
+    print("rewrite pdb %s with score %.2f to occupency"%(new_pdb_path,score))

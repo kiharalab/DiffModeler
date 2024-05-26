@@ -216,8 +216,8 @@ def collect_final_pdb(modeling_dir,chain_visit_dict):
     with open(final_pdb_path,'w') as wfile:
         for chain in chain_visit_dict:
             current_dir=os.path.join(modeling_dir,"iterative_%s"%chain)
-            pdb_path = os.path.join(current_dir,"final_rechain.cif")
-            with open(pdb_path,'r') as rfile:
+            tmp_cif_path = os.path.join(current_dir,"final_rechain.cif")
+            with open(tmp_cif_path,'r') as rfile:
                 if first_structure:
                     for line in rfile:
                         wfile.write(line)

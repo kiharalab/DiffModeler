@@ -149,6 +149,7 @@ if __name__ == "__main__":
     source_cif = assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params)
     output_cif = os.path.join(save_path,"DiffModeler.cif")
     shutil.copy(source_cif,output_cif)
+    print(f"Please check DiffModeler's output structure in {output_cif}")
 
 
 

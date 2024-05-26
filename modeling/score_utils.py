@@ -2,6 +2,7 @@ import os
 import shutil
 from ops.io_utils import load_pickle
 from modeling.pdb_utils import extract_residue_locations
+from ops.pdb_utils import rewrite_pdb_occupency
 
 def sort_dict_by_value_desc(d: dict) -> dict:
     """
@@ -37,7 +38,7 @@ def sort_dict_by_value_desc(d: dict) -> dict:
 
 def read_score(new_score_dict,pdb_dir,output_path):
     pdb_dir = os.path.abspath(pdb_dir)
-    listoldpdb = [x for x in os.listdir(pdb_dir) if ".pdb" in x]
+    listoldpdb = [x for x in os.listdir(pdb_dir) if ".pdb" in x and "format" not in x]
     listoldpdb.sort()
     for item in listoldpdb:
         old_pdb_path = os.path.join(pdb_dir,item)
@@ -60,8 +61,11 @@ def read_score(new_score_dict,pdb_dir,output_path):
     for kk in range(len(list_score)):
         pdb_path = os.path.join(pdb_dir,"#%d.pdb"%kk)
         assert os.path.exists(pdb_path)
+
         score= list_score[kk]
-        new_score_dict[pdb_path]=score*100
+        new_pdb_path = os.path.join(pdb_dir,"#%d_format.pdb"%kk)
+        rewrite_pdb_occupency(pdb_path,new_pdb_path,score)
+        new_score_dict[new_pdb_path]=score*100
     new_score_dict=sort_dict_by_value_desc(new_score_dict)
     return new_score_dict
 
