@@ -72,6 +72,7 @@ def construct_single_chain_candidate(params,save_path):
     #first build a dict from the input text configure file
     single_chain_pdb_input = os.path.abspath(params['P'])
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
+    os.makedirs(single_chain_pdb_dir,exist_ok=True)
     #if os.path.exists(single_chain_pdb_dir):
         #shutil.rmtree(single_chain_pdb_dir)
     #delete_dir(single_chain_pdb_dir)
