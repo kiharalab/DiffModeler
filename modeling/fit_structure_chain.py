@@ -111,7 +111,7 @@ def fit_structure_chain(input_map_path,fitting_dict,fitting_dir,params):
                     try:
                         mask_map_by_pdb(fit_target_map,diff_map_path_tmp,top_fitpdb_path,keep_label=False)
                     except:
-                        mask_map_by_pdb_slow(input_map_path,diff_map_path_tmp,top_fitpdb_path,cutoff=2,keep_label=False)
+                        mask_map_by_pdb_slow(fit_target_map,diff_map_path_tmp,top_fitpdb_path,cutoff=2,keep_label=False)
                     format_map(diff_map_path_tmp,diff_map_path_new)
                 new_fit_target_map_list.append(diff_map_path_new)
             fit_target_map_list = new_fit_target_map_list
