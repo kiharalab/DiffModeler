@@ -427,7 +427,8 @@ def rewrite_pdb_occupency(pdb_path,new_pdb_path,score):
             for line in rfile:
                 if line.startswith("ATOM") or line.startswith("HETATM"):
                     #must use index to change
-                    line = line[:54]+"%6.2f"%score+line[60:]
+                    new_line = line[:54]+"%6.2f"%score+line[60:]
+                    wfile.write(new_line)
                 else:
                     wfile.write(line)
     print("rewrite pdb %s with score %.2f to occupency"%(new_pdb_path,score))
