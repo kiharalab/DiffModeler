@@ -5,7 +5,7 @@ from ops.map_utils import process_map_data,save_label_map
 import numpy as np
 from ops.map_coord_utils import permute_ns_coord_to_pdb,permute_pdb_coord_to_map
 import mrcfile
-from pdb_utils import remove_hetatm_lines
+from modeling.pdb_utils import remove_hetatm_lines
 
 
 def assign_label_special(map_data, mapc, mapr, maps, origin ,nxstart,nystart,nzstart,cif_info_dict):
