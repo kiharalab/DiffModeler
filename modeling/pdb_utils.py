@@ -1,6 +1,22 @@
 
 from ops.pdb_utils import reindex_cif
 
+def remove_hetatm_lines(input_file, output_file):
+    """
+    Remove HETATM lines from a PDB file and save the result to a new file.
+
+    Args:
+        input_file (str): Path to the input PDB file.
+        output_file (str): Path to the output PDB file.
+    """
+    with open(input_file, 'r') as pdb_file:
+        lines = pdb_file.readlines()
+
+    filtered_lines = [line for line in lines if not line.startswith('HETATM')]
+
+    with open(output_file, 'w') as output_file:
+        output_file.writelines(filtered_lines)
+
 def filter_backbone(input_pdb_path,backbone_pdb_path):
     backbone_list=["CA","C","N"]
     #support DNA/RNA template fitting
