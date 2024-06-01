@@ -10,6 +10,7 @@ def read_structure_txt(input_dir,input_file_path):
             if len(line)<=4 or ".pdb" not in line:
                 print("invalid line %s"%line)
                 continue #user sometime put empty lines
+            line=line.replace('\ufeff', '') #process strange user html format
             split_info= line.split()
             input_file_path = os.path.join(input_dir,split_info[0])
             if not os.path.exists(input_file_path):
