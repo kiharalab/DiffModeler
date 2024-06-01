@@ -5,6 +5,7 @@ from ops.map_utils import process_map_data,save_label_map
 import numpy as np
 from ops.map_coord_utils import permute_ns_coord_to_pdb,permute_pdb_coord_to_map
 import mrcfile
+from modeling.pdb_utils import remove_hetatm_lines
 
 
 def assign_label_special(map_data, mapc, mapr, maps, origin ,nxstart,nystart,nzstart,cif_info_dict):
@@ -109,7 +110,8 @@ def mask_map_by_pdb(input_map_path,output_map_path,final_pdb_output,keep_label=F
     else:
         resolution = 2
     sb = StructureBlurrer()
-    pdb1 = PDBParser.read_PDB_file('PDB1',final_pdb_output)
+    remove_hetatm_lines(final_pdb_output, final_pdb_output)  # avoid issue by tempy
+    pdb1 = PDBParser.read_PDB_file('PDB1',final_pdb_output,hetatm=True,water=True)
     map1 = MapParser.readMRC(input_map_path)
     sim_map = sb.gaussian_blur_real_space(prot=pdb1,densMap=map1,resolution=resolution)
     bin_map1 = map1.fullMap
