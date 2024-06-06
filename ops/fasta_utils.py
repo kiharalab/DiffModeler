@@ -36,7 +36,7 @@ def read_fasta(input_fasta_path):
                         # final_id+=tmp_item+","
                         # use_set.add(tmp_item)
                     else:
-                        if tmp_item not in use_set:
+                        if tmp_item not in use_set and len(tmp_item)!=0:
                             final_id+=tmp_item+","
                             use_set.add(tmp_item)
                         else:
