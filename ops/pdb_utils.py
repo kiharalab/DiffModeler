@@ -434,7 +434,7 @@ def rewrite_pdb_occupency(pdb_path,new_pdb_path,score):
     print("rewrite pdb %s with score %.2f to occupency"%(new_pdb_path,score))
 
 def clean_pdb_template(fitting_dict,final_template_dir):
-    os.makedirs(fitting_dict,exist_ok=True)
+    os.makedirs(final_template_dir,exist_ok=True)
     final_dict={}
     pdb_index=0
     for key in fitting_dict:
