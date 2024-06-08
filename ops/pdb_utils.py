@@ -360,7 +360,7 @@ def cif2pdb(input_cif_path,final_pdb_path):
                     else:
                         current_bfactor = 1.0
                     wline=""
-                    wline += "ATOM%7d  %-3s %3s%2s%4d    " % (current_atom_index, current_atom_name,
+                    wline += "ATOM%7d %-4s %3s%2s%4d    " % (current_atom_index, current_atom_name,
                                                              current_res_name, current_chain,current_res_index)
                     wline = wline + "%8.3f%8.3f%8.3f%6.2f%6.2f\n" % (current_x,current_y,current_z, current_occupency,current_bfactor)
                     wfile.write(wline)
@@ -432,3 +432,31 @@ def rewrite_pdb_occupency(pdb_path,new_pdb_path,score):
                 else:
                     wfile.write(line)
     print("rewrite pdb %s with score %.2f to occupency"%(new_pdb_path,score))
+
+def clean_pdb_template(fitting_dict,final_template_dir):
+    os.makedirs(fitting_dict,exist_ok=True)
+    final_dict={}
+    pdb_index=0
+    for key in fitting_dict:
+        pdb_path = key
+        new_pdb_path = os.path.join(final_template_dir,"%d.pdb"%pdb_index)
+        with open(pdb_path,'r') as rfile:
+            with open(new_pdb_path,'w') as wfile:
+                for line in rfile:
+                    if line.startswith("ATOM") or line.startswith("HETATM"):
+                        try:
+                            #parse information
+                            chain_id = line[21]
+                            atom_name = line[12:16]
+                            x=float(line[30:38])
+                            y=float(line[38:46])
+                            z=float(line[46:54])
+                            nuc_id=int(line[22:26])
+                            resn = line[17:20]
+                            wfile.write(line)
+                        except:
+                            print("!!!error in line\n%s"%line)
+
+        final_dict[new_pdb_path]=fitting_dict[key]
+        pdb_index+=1
+    return final_dict

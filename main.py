@@ -135,6 +135,10 @@ if __name__ == "__main__":
     if len(fitting_dict)==0:
         print("Empty Template candiate, DiffModeler can not run!!!")
         exit()
+    #clean fitting dict to avoid strange pdb cause entire program fail
+    final_template_dir = os.path.join(save_path,"final_template_input")
+    from ops.pdb_utils import clean_pdb_template
+    final_fitting_dict=clean_pdb_template(fitting_dict,final_template_dir)
 
     #diffusion inference
     diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
@@ -142,12 +146,12 @@ if __name__ == "__main__":
     #VESPER singl-chain fitting process
     fitting_dir = os.path.join(save_path,"structure_modeling")
     from modeling.fit_structure_chain import fit_structure_chain
-    fit_structure_chain(diff_trace_map,fitting_dict,fitting_dir,params)
+    fit_structure_chain(diff_trace_map,final_fitting_dict,fitting_dir,params)
 
     #VESPER assembling
     modeling_dir = os.path.join(save_path,"structure_assembling")
     from modeling.assemble_structure import assemble_structure
-    source_cif = assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params)
+    source_cif = assemble_structure(diff_trace_map,final_fitting_dict,fitting_dir,modeling_dir,params)
     output_cif = os.path.join(save_path,"DiffModeler.cif")
     shutil.copy(source_cif,output_cif)
     print(f"Please check DiffModeler's output structure in {output_cif}")
