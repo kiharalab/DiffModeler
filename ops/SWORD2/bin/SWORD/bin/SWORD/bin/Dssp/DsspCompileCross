@@ -1,0 +1,17 @@
+echo Now cross-compiling DSSP under Linux for Windows...
+# SET PATH TO CROSS-COMPILER
+PATH=/usr/local/cross-tools/bin:/usr/local/cross-tools/i386-mingw32msvc/bin:/usr/local/cross-tools/i386-mingw32msvc/lib:/usr/local/cross-tools/i386-mingw32msvc/include:$PATH
+# COMPILE
+echo Compiling..
+gcc -g -c -O2 -Wall -I/usr/local/cross-tools/i386-mingw32msvc/include -DWINDOWS AccSurf.c     -o AccSurf.o
+gcc -g -c -O2 -Wall -I/usr/local/cross-tools/i386-mingw32msvc/include -DWINDOWS CalcAccSurf.c -o CalcAccSurf.o
+gcc -g -c -O2 -Wall -I/usr/local/cross-tools/i386-mingw32msvc/include -DWINDOWS Contacts.c    -o Contacts.o
+gcc -g -c -O2 -Wall -I/usr/local/cross-tools/i386-mingw32msvc/include -DWINDOWS Date.c        -o Date.o
+gcc -g -c -O2 -Wall -I/usr/local/cross-tools/i386-mingw32msvc/include -DWINDOWS DsspCMBI.c    -o DsspCMBI.o
+gcc -g -c -O2 -Wall -I/usr/local/cross-tools/i386-mingw32msvc/include -DWINDOWS Vector.c      -o Vector.o
+gcc -g -c -O2 -Wall -I/usr/local/cross-tools/i386-mingw32msvc/include -DWINDOWS p2clib.c      -o p2clib.o
+# LINK
+echo Linking...
+#gcc -Wall AccSurf.o CalcAccSurf.o Contacts.o Date.o Dssp.o Vector.o p2clib.o -o DSSP.EXE -L/usr/local/cross-tools/i386-mingw32msvc/lib -lmingw32 -lSDLmain -lSDL -luser32 -lgdi32 -lwinmm -ldxguid -mwindows -lwsock32 -lglu32
+gcc -Wall AccSurf.o CalcAccSurf.o Contacts.o Date.o DsspCMBI.o Vector.o p2clib.o -o dsspcmbi.exe -L/usr/local/cross-tools/i386-mingw32msvc/lib -lmingw32 -luser32 -lgdi32 -lwinmm -ldxguid -mwindows -lwsock32 -lglu32
+

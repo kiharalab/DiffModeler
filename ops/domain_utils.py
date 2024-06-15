@@ -24,6 +24,7 @@ def prepare_domain_input(fitting_dict,save_dir,num_cpu=8):
             return fitting_dict
         
     current_dir = os.path.dirname(os.path.abspath(__file__))
+    current_dir = os.path.join(current_dir,"SWORD2")
     sword_script_path = os.path.join(current_dir,"SWORD2.py")
     #clean the save_dir
     if os.path.exists(save_dir):

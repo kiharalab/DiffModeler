@@ -1,0 +1,927 @@
+#!/usr/bin/env perl
+
+use strict;
+use Cwd qw(cwd abs_path);
+use Getopt::Long;
+
+use POSIX;
+use FindBin;
+use lib "$FindBin::Bin/bin";
+use lib "$FindBin::Bin/bin/ParsePDB";
+use CleanNonStand;
+use DistanceModel;
+use ParseMeasure;
+use ParsePDB;
+use File::Basename;
+my $dirname = dirname(__FILE__);
+my $verbose = undef;
+# get the OS name
+my $osName = $^O;
+
+# check if arch is arm64 or x86_64 and compile accordingly
+if ( !-e $dirname.'/bin/Dssp/dsspcmbi' ) {
+    my $curdir = `pwd`;
+    chdir($dirname."/bin/Dssp/");
+    if ( $osName eq "darwin" ) {
+        print STDOUT "First run: compile for macOS Darwin system.\n";
+        system "./DsspCompileGCCmacos";
+    } else {
+        print STDOUT "First run: compile for Linux system.\n";
+        system "./DsspCompileGCC";
+    }
+    chdir($curdir);
+}
+
+
+# number of alternative assignments in terms of decomposition levels and domain boundaries
+my ( $alt_l, $alt_b );
+
+# refine the alternate partitionings by giving non-similar (<85% overlap) delineation
+my $option_alt_diff = 1;
+
+# global array that will contain the decomposition qualities to
+# calculate the ambiguity (or complexity) index
+my @globqual;
+
+sub main {
+
+    my ( $path, $PDB, $dir, $chain, $download, $max, $size ) = (undef) x 7;
+
+    my $help = (@ARGV) ? 0 : 1;
+
+    GetOptions(
+        'download' => \$download,
+        'path=s'   => \$path,
+        'input=s'  => \$PDB,
+        'chain=s'  => \$chain,
+        'help'     => \$help,
+        'max=s'    => \$max,
+        'verbose'  => \$verbose,
+        'size=s'   => \$size,
+        'dir=s'    => \$dir
+
+    );
+
+    helper() if ($help);
+    die "\nError: -i argument required\n" if ( !$PDB );
+    die "\nError: -p argument useless without -d option\n"
+      if ( $path && !$download );
+    die "\nError: $path directory not found\n" if ( $path && !-d $path );
+    die "\nError with -c option: chain must be 1 character\n"
+      if ( length($chain) > 1 );
+    die "\nError: -m argument must be 3, 9 or 15\n"
+      if ( $max !~ m/^$|^3$|^9$|^15$/ );
+    die "\nError: -r argument required\n" if ( !$dir );
+
+    if ( not defined $size ) {
+        $size = 30;
+    }
+
+    if ( $size !~ /^\d{1,2}$/ ) {
+        die "\nsize must be an integer between 10 and 99\n";
+    }
+    if ( $size > 99 and $size < 15 ) {
+        die "\nsize must be an integer between 15 and 99\n";
+    }
+
+    ( $alt_l, $alt_b ) =
+      ( $max == 9 ) ? ( 3, 3 ) : ( $max == 15 ) ? ( 5, 3 ) : ( 3, 1 );
+
+    # If filename includes path
+    if ( $PDB =~ m/\// ) {
+        my @parts = split( '/', $PDB );
+        $PDB = $parts[$#parts];
+
+        #$path = join '/', @parts[ 0 .. $#parts - 1 ];
+    }
+
+    #$path = ( !$path or $path eq './' ) ? cwd() : abs_path($path);
+    #$path =~ s/\/$//;
+
+    $path = $dir;
+
+    print STDERR "Peel $PDB: ";
+    my $ori_name = $PDB;    # original input name
+    my $rename_after;
+
+    # If input does not look like a valid PDB entry (4 characters)
+    if ( $PDB !~ m/^\d[^_\W]{3}$/ ) {
+        `cp $path/$PDB $path/XXXX` if ( -e "$path/$PDB" );
+        $PDB          = 'XXXX';
+        $rename_after = 1;        # The original input name will be restored
+    }
+
+    $PDB .= $chain if ($chain);
+
+    # The minimal number of position alternate is 1
+    if ( $alt_b < 1 ) { $alt_b = 1; $option_alt_diff = 0 }
+
+    # If download option is on, then use the NET::FTP module to connect to RCSB service
+    my $ftp = ($download) ? net_ftp() : 0;
+
+    # Download and clean data
+    my @cleaned_input = download_clean( $download, $path, $ftp, $PDB );
+
+    # DSSP, Peeling and domain reconstruction
+    foreach my $entry (@cleaned_input) {
+        chomp $entry;
+        $entry = `basename $entry`;
+        chomp $entry;
+        my $name_root = "$path/PDBs_Clean/$entry";
+
+        #my $name_root =
+
+        unless ( -e "$name_root/$entry.dssp" ) {
+            print "\nDSSP" if ($verbose);
+            `$dirname/bin/Dssp/dsspcmbi -na $name_root/$entry.pdb $name_root/$entry.dssp 2> /dev/null`;
+
+            print "\nParsing DSSP" if ($verbose);
+            parsing_dssp( $path, $entry );
+        }
+
+        unless ( -e "$name_root/file_pu_delineation.mtx" ) {
+            print "\nPeeling\n" if ($verbose);
+            peeling( $path, $entry );
+        }
+
+        # If the Protein Peeling succeed, then compute measures
+        if ( -e "$name_root/file_pu_delineation.mtx" ) {
+            my @temp = reconstruct_domains( $entry, $path );
+            my ($num) = file2array("$name_root/$entry.num");
+            my @tab_num = split( /\s+/, $num );
+            quality_and_display( $ori_name, \@tab_num, @temp );
+        }
+
+        # If there is no Peeling for the chain, then consider chain as 1 domain
+        else {
+            my ($num) = file2array("$name_root/$entry.num");
+            my @tab_num       = split( /\s+/, $num );
+            my $first_residue = $tab_num[0];
+            my $last_residue  = $tab_num[$#tab_num];
+            print "\n\nPDB: $ori_name\n", "ASSIGNMENT   \n";
+            printf( "#%-1s|%-3s|%60s|%13s|\n",
+                'D', 'Min', 'BOUNDARIES', 'AVERAGE κ' );
+            printf(
+                "%-2d|%-3d|%60s|%10.6f|%12.6f|%12.6f\n\n",
+                "1",
+                $#tab_num + 1,
+                "$first_residue" . "-" . "$last_residue", '0.000000'
+            );
+        }
+    }
+    restore_name( $path, $ori_name ) if ($rename_after);
+}    # sub main
+
+sub net_ftp {
+    my $ftp = 0;
+
+    use Net::FTP;
+
+    $ftp = Net::FTP->new( 'ftp.wwpdb.org', Debug => 0, Passive => 1 )
+      or die "Cannot connect to ftp://ftp.wwpdb.org: $@";
+
+    $ftp->login( 'anonymous', '-anonymous@' )
+      or die 'Cannot login ', $ftp->message;
+
+    $ftp->cwd('/pub/pdb/data/structures/all/pdb')
+      or die 'Cannot change working directory ', $ftp->message;
+
+    return $ftp;
+}    # sub net_ftp
+
+sub download_clean {
+    my ( $download, $path, $ftp, $entry ) = splice( @_, 0, 4 );
+
+    #$entry = lc($entry);
+    my @output;
+
+    # If the PDB is not in the directory
+    unless ( -e "$path/$entry" ) {
+        print STDERR "\nError: input file not found in $path/ directory\n";
+        die "\n";
+    }
+
+    if ( -e "$path/$entry" ) {
+
+        # First cleaning: remove non-standard residues
+        unless ( -e "$path/PDBs_Stand/$entry" ) {
+            print "Cleaning non-standard residues\n" if ($verbose);
+            CleanNonStand( $path, $entry );
+            print " ok\n" if ($verbose);
+
+        }
+
+        # Second cleaning: Keep chains of interest, renum the residues keep a hash with original number
+        print "Cleaning PDB\n" if ($verbose);
+        clean_pdb_file( $path, $entry ) unless ( -e "$path/PDBs_Clean/$entry" );
+        print " ok\n" if ($verbose);
+
+        #Keep the complete PDB id (with chains) for the next step
+        my $tmp_pdb = $entry;
+        my $ls      = `ls -d $path/PDBs_Clean/$tmp_pdb*`;
+        push( @output, split( ' ', $ls ) );
+    }
+
+    return @output;
+}    # sub download_clean
+
+sub fetch_pdb_file {
+
+    my $PDB       = shift;
+    my $ftp       = shift;
+    my $directory = shift;
+
+    my ( $filepdb, $fail );
+
+    $PDB = substr( $PDB, 0, 4 );
+    $filepdb = 'pdb' . $PDB . '.ent';
+
+    $ftp->get( 'pdb' . $PDB . '.ent.gz', "$directory/$filepdb.gz" )
+      or $fail = 1;
+
+    if ( !$fail ) {
+        $PDB = $PDB;
+        `gunzip -q -f -d $directory/$filepdb.gz $directory/$filepdb`;
+        `mv $directory/$filepdb $directory/$PDB`;
+
+    }
+    else {
+        print "\nError: cannot download " . substr( $PDB, 0, 4 ) . "\n";
+    }
+}    # sub fetch_pdb_file
+
+sub clean_pdb_file {
+    my $path     = shift;
+    my $idPDB    = shift;
+    my $pathpdbs = "$path/PDBs_Stand/";
+
+    my $chain_arg = '';
+    my $chain     = '';
+    my @chain     = ();
+    my $i         = 1;
+
+    my $temp = `mkdir -p $path/PDBs_Clean/`;
+
+    my $PDB = ParsePDB->new(
+        FileName => "$pathpdbs$idPDB",
+        NoHETATM => 1,
+        NoANISIG => 1
+    );
+    $PDB->Parse;
+
+    $PDB->RemoveInsertedResidues;    #delete superposed insertion
+    $PDB->RemoveAtomLocations( AtomLocations => 'First' );    #delete alternate
+
+    $PDB->SetChainLabelAsLetter(1);
+    $PDB->SetChainSuffix('');
+
+    my @models        = $PDB->IdentifyModels;
+    my $default_model = 0;
+    if ( $#models > 0 ) {
+        $default_model = $models[0];
+        print "Identify $#models models (@models); Take the first one : $default_model\n"
+          if ($verbose);
+
+        #$PDB->WriteModels;
+    }
+
+    my @id_chains     = $PDB->IdentifyChains;
+    my $default_chain = 0;
+    if ( $#id_chains > 0 ) {
+
+        #$PDB->WriteModels;
+        my $default_chain = $id_chains[0];
+        print
+          "Identify $#id_chains chains take the first one :  $default_chain\n"
+          if ($verbose);
+    }
+
+    $PDB->WriteChains;    # write the different chains
+
+    if ( $chain_arg eq '' ) {
+        $chain = $PDB->GetChainLabel(
+            Model => $default_model,
+            Chain => $default_chain
+        );
+        push( @chain, $chain );
+
+      #
+      #        while ( $PDB->GetModelNumber( Model => 0, Chain => $i ) ne '' ) {
+      #            $chain = $PDB->GetModelNumber( Model => 0, Chain => $i );
+      #            push( @chain, $chain );
+      #            $i++;
+      #        }
+      #
+
+       #        while ( $PDB->GetChainLabel( Model => 0, Chain => $i ) ne '' ) {
+       #            $chain = $PDB->GetChainLabel( Model => 0, Chain => $i );
+       #            push( @chain, $chain );
+       #            $i++;
+       #        }
+       #
+        print "Final number of chains: $#chain\n" if ($verbose);
+
+    }
+    else {
+        push( @chain, $chain_arg );
+    }
+
+    foreach $chain (@chain) {
+        my $file = "$path/PDBs_Clean/$idPDB";
+        unless ( -e $file ) {
+            print "Parsing chain: $chain\n" if ($verbose);
+
+            my $PDB = ParsePDB->new(
+                FileName => "$pathpdbs$idPDB",
+                NoHETATM => 1,
+                NoANISIG => 0
+            );
+            $PDB->Parse;
+
+            #
+            my @ResidueNumbers = $PDB->IdentifyResidueNumbers( Model => 0 );
+            open( FO, ">$pathpdbs$idPDB.num" )
+              or die "Cannot open $pathpdbs$idPDB.num : $!\n";
+            foreach my $ResidueNumber (@ResidueNumbers) {
+                printf( FO "$ResidueNumber " );
+            }
+            close FO;
+
+            $PDB->RenumberResidues( ResidueStart => 1 ); # renum and remove gaps
+            $PDB->Write( FileName => $file );    # write cleaned PDB files
+            $PDB->WriteFASTA( Model => 0 );      # write cleaned FASTA files
+
+            #$temp = `rm $pathpdbs$idPDB$chain.pdb`;
+            $temp = `mv $pathpdbs$idPDB.fasta $path/PDBs_Clean/`
+              ;    # directory of the cleaned PDB files
+            $temp = `mv $pathpdbs$idPDB.num $path/PDBs_Clean/`
+              ;    # directory of the cleaned PDB files
+
+            open( my $fhi, '<', $file )
+              or die "Error while opening $file:\n\t$!\n";
+            open( my $fho, '>', "$file.pdb" )
+              or die "Error while writing $file.pdb:\n\t$!\n";
+
+            while (<$fhi>) {
+                my @buff = split( ' ', $_ );
+                if ( $buff[0] eq 'ATOM' ) {
+                    @buff = split( '', $_ );
+                    $buff[16] = ' ' if ( $buff[16] ne ' ' );    # if alternate
+                    $_ = join( '', @buff );
+                    print $fho $_;
+                }
+            }
+
+            $temp = `rm $file`;
+            $temp = `mkdir -p $file/`;
+            $temp = `mv $file.* $file/`;
+        }
+    }
+}    # sub clean_pdb_file
+
+sub parsing_dssp {
+
+    my %dsspto3 = (
+        'H' => 'H',
+        'G' => 'H',
+        'I' => 'H',
+        'E' => 'E',
+        'B' => 'E',
+        'C' => 'C',
+        'S' => 'C',
+        'T' => 'C',
+        ' ' => 'C'
+    );
+
+    my $path     = shift;
+    my $PDB      = shift;
+    my $pathpdbs = "$path/PDBs_Clean/";
+
+    my ( $ss, @SS, $assign, $i, $j );
+    my $buff = 1;
+
+    open( my $fhi, '<', "$pathpdbs$PDB/$PDB.dssp" );
+    open( my $fho, '>', "$pathpdbs$PDB/$PDB.s2d" );
+
+    print $fho "> $PDB \n";
+
+    while (<$fhi>) {
+        if ( $_ =~ "#  RESIDUE AA STRUCTURE" ) {
+            $assign = 1;
+        }
+        elsif ( $assign == 1 ) {
+            $ss = substr( $_, 16, 1 );
+
+            if ( substr( $_, 13, 1 ) ne '!' ) {
+                push( @SS, '*' ) if ( ( $buff + 1 ) < substr( $_, 7, ) );
+                push( @SS, $dsspto3{$ss} );
+                $buff = substr( $_, 7, 3 );
+            }
+        }
+    }
+
+    my $temp = int( $#SS / 80 );
+
+    for ( $i = 0 ; $i <= $temp ; $i++ ) {
+        for ( $j = 0 ; $j < 80 ; $j++ ) {
+            print $fho $SS[ 80 * $i + $j ];
+        }
+        print $fho "\n";
+    }
+}    # sub parsing_dssp
+
+sub peeling {
+    my $path = shift;
+    my $PDB  = shift;
+    $path .= '/PDBs_Clean/';
+    my $prog_peeling = "$dirname/bin/Peeling1141";
+    if ( $osName eq "darwin" ) {
+        $prog_peeling = "$dirname/bin/Peeling1141_macos13_intel_arm64";
+    }
+
+    my $temp = `mkdir -p $path$PDB/Peeling/`;
+    my $opt_peeling = '-R2 98 -ss2 8 -lspu 30 -mspu 0 -d0 6.0 -delta 1.5 -oss 0 -p 0 -cp 0 -npu 30';
+    my $peeling_output = `$prog_peeling -pdb $path$PDB/$PDB.pdb -dssp $path$PDB/$PDB.dssp $opt_peeling 2> /dev/null`;
+
+    $temp = `mv file_ca_coo.pdb file_matrix_pu_contact.mtx file_proba_contact.mat file_pu_delineation.mtx $path$PDB 2> /dev/null`;
+
+    my $i = 1;
+    my ( $j, $k, $l ) = (0) x 3;
+
+    my ( @start, @end );
+
+    my @lines = split( "\n", $peeling_output );
+
+    open( my $fhoutlog, '>', "$path$PDB/Peeling/Peeling.log" );
+    print $fhoutlog $peeling_output;
+
+   #print STDERR "\nNo peeling for " . substr( $PDB, 0, length($PDB)-4) . "\n\n"
+   # if ( $#lines == 14 );
+
+    #if ( $#lines != 14 ) {
+    my @FENTpdb   = file2array("$path$PDB/$PDB.pdb");
+    my @FENTca    = file2array("$path$PDB/file_ca_coo.pdb");
+    my @FENTfasta = file2array("$path$PDB/$PDB.fasta");
+    my @FENTs2d   = file2array("$path$PDB/$PDB.s2d");
+
+    my @temp_fasta = format_array(@FENTfasta);
+    my @temp_s2d   = format_array(@FENTs2d);
+
+    # because Peeling binary is not givin the same output
+    # on linux and MacOS
+    my $nbCommentLines = 15;
+    if ( $osName eq "darwin" ) {
+        $nbCommentLines = 0;
+    }
+
+    foreach ( @lines[ $nbCommentLines .. $#lines + 1 ] ) {
+        @start = ();
+        @end   = ();
+
+        my $level = $i;
+        my @champs = split( ' ', $_ );
+
+        my $nb = $champs[4];
+        for ( $j = 0 ; $j < $nb * 2 - 1 ; $j += 2 ) {
+            push( @start, $champs[ 5 + $j ] );
+            push( @end,   $champs[ 6 + $j ] );
+        }
+
+        for ( $j = 0 ; $j <= $#start ; $j++ ) {
+            my $name_root =
+                "$path$PDB/Peeling/"
+              . $PDB . '_'
+              . $level . '_'
+              . $start[$j] . '_'
+              . $end[$j];
+            open( my $fhoutpdb, '>', "$name_root.pdb" )
+              or die "Error while writing $name_root.pdb:\n\t$!\n";
+            open( my $fhoutca, '>', "$name_root.ca" )
+              or die "Error while writing $name_root.ca:\n\t$!\n";
+
+            #print ca
+            print $fhoutca
+              join( '', @FENTca[ $start[$j] - 1 .. $end[$j] - 1 ] );
+
+            #print pdb
+            foreach my $line (@FENTpdb) {
+                my @buff = split( '', $line );
+                print $fhoutpdb $line
+                  if (  ( join( '', @buff[ 22 .. 26 ] ) >= $start[$j] )
+                    and ( join( '', @buff[ 22 .. 26 ] ) <= $end[$j] ) );
+            }
+
+            #print fasta and s2d
+            print2file( "$name_root.fasta", $PDB, $level, \@start, \@end, $j,
+                \@temp_fasta );
+            print2file( "$name_root.s2d", $PDB, $level, \@start, \@end, $j,
+                \@temp_s2d );
+        }
+
+        $i++;
+    }
+
+    #}
+}    # sub peeling
+
+sub reconstruct_domains {
+    my ( $line, $path ) = splice( @_, 0, 2 );
+
+    my $name_root = "$path/PDBs_Clean/$line";
+
+#Compute measures like Contact Ratio and Density for a large set of merging attempt
+    print "\nComputing criteria for PUs merging" if ($verbose);
+    my $PU_measure = `$dirname/bin/ComputeMeasure.pl $name_root/file_matrix_pu_contact.mtx $name_root/file_pu_delineation.mtx 0.0001`;
+
+    #Keep the relevant measures for the domain prediction
+    my @relevant_measure =
+      ParseMeasure( $PU_measure, "$path/PDBs_Clean/", $line, 0, 0, $alt_b,
+        $alt_l, $option_alt_diff );
+
+    #Apply the linear prediction model on measures
+    print "\nPredicting structural domains" if ($verbose);
+    my @final_prediction = prediction_model(@relevant_measure);
+
+    @final_prediction = reverse(@final_prediction);
+
+    my $N_dom = $#final_prediction + 2;
+    foreach ( 0 .. $#final_prediction ) {
+        if ( $final_prediction[$_] == 0 ) {
+            $N_dom = $_ + 1;
+            last;
+        }
+    }
+
+   #Keep the relevant measures, those concerned by the alternate position option
+    print "\nSelecting domain assignments" if ($verbose);
+    @relevant_measure =
+      ParseMeasure( $PU_measure, "$path/PDBs_Clean/", $line, 1, $N_dom, $alt_b,
+        $alt_l, $option_alt_diff );
+
+   #Keep the number of domain for relevant merging attempt around the prediction
+   #Those concerned by the alternate level option
+    my $to_print = '';
+    foreach ( 0 .. $#relevant_measure ) {
+        my $n = substr( $relevant_measure[$_], 0, 2 );
+
+        if ( $n == $N_dom ) {
+            $to_print = $relevant_measure[$_];
+            last;
+        }
+    }
+
+    return ( $to_print, $N_dom, @relevant_measure );
+}    # sub reconstruct_domains
+
+sub prediction_model {
+    my @relevant_measure = @_;
+    my ( @buff, @prediction );
+
+    my $max_dom = -1;
+    my ( $CR, $obs_CPD, $theo_CPD ) = (0) x 3;
+
+    foreach my $idline ( 0 .. ( $#relevant_measure - 1 ) ) {
+        @buff = split( '\|', $relevant_measure[$idline] );
+        $max_dom = $buff[0] if ( $max_dom == -1 );
+
+        if ( $buff[0] == $max_dom ) {
+            $max_dom--;
+
+            $CR      = $buff[3];
+            $obs_CPD = $buff[5];
+
+            #model parameters
+            my $diag_intercept = 2.818831;
+            my $diag_slope     = 3.582524;
+            my $diag_inter_V   = 0.09434462;
+            my $horizontal_lim = 3.166823;
+            my $vertical_lim   = 0.231845;
+
+            my $theo_CPD = 0;
+            if    ( $CR <= $diag_inter_V ) { $theo_CPD = $horizontal_lim }
+            elsif ( $CR >= $vertical_lim ) { $theo_CPD = 10000 }
+            else { $theo_CPD = ( ( $CR * $diag_slope ) + $diag_intercept ) }
+
+            if   ( $theo_CPD - $obs_CPD > 0.0 ) { push( @prediction, 0 ) }
+            else                                { push( @prediction, 1 ) }
+        }
+    }
+
+    return @prediction;
+}    # sub prediction_model
+
+sub quality_and_display {
+    my ( $line, $ref_tab_num, $to_print, $N_dom ) = splice( @_, 0, 4 );
+    my @relevant_measure = @_;
+
+    #Print the main domain prediction and associated CR and CPD measures
+    my @to_print = split( '\|', $to_print );
+    my $calc_print = 'n/a';    # the quality of the optimal decomposition
+
+    if ( $to_print[0] != 1 ) {
+        $calc_print = DistanceModel( $to_print[3], $to_print[5], 0 );
+        $calc_print = step_function($calc_print);
+        $calc_print = substr( '*****', 0, $calc_print );
+    }
+
+    print "\n\nPDB: $line\nASSIGNMENT   \n";
+    my ( $print1, $print2, $print3, $print4, $print5 ) = '' x 5;
+
+    $print1 = sprintf( "#%-1s|%-3s|%60s|%13s|%10s|\n",
+        'D', 'Min', 'BOUNDARIES', 'AVERAGE κ', 'QUALITY' );
+
+    #   if($alt_b > 1 || $alt_l >= 1){
+    #        chomp $print1;
+    #       $print1 .= sprintf("%12s|\n",'COMPLEXITY');
+    #   }
+
+    #True Numbering
+    $to_print[2] =~ s/(\d+)/$$ref_tab_num[$1]/g;
+
+    $print2 = sprintf( "%-2d|%-3d|%60s|%12.6f|%10s|",
+        $to_print[0], $to_print[1], $to_print[2], $to_print[6], $calc_print );
+
+    push( @globqual, length($calc_print) ) unless ( $calc_print eq 'n/a' );
+
+    #If some alternate was required, then print it
+    if ( $alt_b > 1 || $alt_l >= 1 ) {
+        $print3 = "ALTERNATIVES\n";
+        $print4 = sprintf( "#%-1s|%-3s|%60s|%13s|%10s|\n",
+            'D', 'Min', 'BOUNDARIES', 'AVERAGE κ', 'QUALITY' );
+
+        my $optimal_K = $to_print[6];    # Guillaume 2016
+
+        #Contains only relevant alternate postion
+        foreach (@relevant_measure) {
+            @to_print = split( '\|', $_ );
+
+            my $calc_print2 = 'n/a'; # quality of the alternative decompositions
+
+            #Print relevant alternate level
+            if (   $to_print[0] <= $N_dom + $alt_l
+                && $to_print[0] >= $N_dom - $alt_l )
+            {
+                if ( $to_print[0] != 1 ) {
+                    $calc_print2 =
+                      DistanceModel( $to_print[3], $to_print[5], 0 );
+                    $calc_print2 = step_function($calc_print2);
+                }
+
+                $calc_print2 = substr( '*****', 0, $calc_print2 )
+                  unless ( $calc_print2 eq 'n/a' );
+
+                #True umbering
+                $to_print[2] =~ s/(\d+)/$$ref_tab_num[$1]/g;
+
+                unless ( $calc_print2 eq 'n/a' or $to_print[6] == $optimal_K )
+                {    # Guillaume 2016
+
+                    $print5 = $print5
+                      . sprintf(
+                        "%-2d|%-3d|%60s|%12.6f|%10s|\n",
+                        $to_print[0], $to_print[1], $to_print[2],
+                        $to_print[6], $calc_print2
+                      );
+
+                    push( @globqual, length($calc_print2) )
+                      unless ( $calc_print2 eq 'n/a' );
+                }
+            }
+        }
+    }
+
+    my $cindex = cindex( \@globqual );
+    print "A-index = $cindex\n";
+    print $print1, $print2;
+    print "\n";
+    print $print3, $print4, $print5, "\n";
+}    # sub quality_and_display
+
+sub format_array {
+    shift(@_);
+    my $seq = join( '', @_ );
+    my @temp = split( "\n", $seq );
+    $seq = join( '', @temp );
+    @temp = split( '', $seq );
+
+    return @temp;
+}    # sub format_array
+
+sub file2array {
+    open( my $fh, '<', $_[0] ) or die "Error while opening $_[0]:\n\t$!\n";
+    my @array = <$fh>;
+}    # sub file2array
+
+sub print2file {
+    my ( $file, $PDB, $level, $start_ref, $end_ref, $j, $temp_fasta_ref,
+        $seqfasta_UP_ref )
+      = splice( @_, 0, 8 );
+
+    my @start      = @{$start_ref};
+    my @end        = @{$end_ref};
+    my @temp_fasta = @{$temp_fasta_ref};
+
+    open( my $fh, '>', $file ) or die "Error while writing $file:\n\t$!\n";
+    print $fh "> $PDB | lev:$level | sta:$start[$j] | end:$end[$j] |\n";
+    my @seqfasta_UP = @temp_fasta[ $start[$j] - 1 .. $end[$j] - 1 ];
+    my $temp        = int( $#seqfasta_UP / 80 );
+
+    for ( my $k = 0 ; $k <= $temp ; $k++ ) {
+        for ( my $l = 0 ; $l < 80 ; $l++ ) {
+            print $fh $seqfasta_UP[ 80 * $k + $l ]
+              if ( $seqfasta_UP[ 80 * $k + $l ] );
+        }
+        print $fh "\n";
+    }
+}    # sub print2file
+
+sub step_function {
+    my $input  = shift;
+    my $output = undef;
+
+    if    ( $input >= 0.15 )  { $output = 5 }
+    elsif ( $input >= 0.05 )  { $output = 4 }
+    elsif ( $input >= -0.05 ) { $output = 3 }
+    elsif ( $input >= -0.15 ) { $output = 2 }
+    else                      { $output = 1 }
+
+    return $output;
+}    # sub step_function
+
+sub restore_name {
+
+    my $path = shift;
+    my $name = shift;
+
+    my @files = `find $path/ -name XXXX* -type f`;
+
+    #print "@files\n";
+
+    for (@files) {
+        if (   $_ =~ m/XXXX[A-Z]{0,1}.\/(XXXX[A-Z]{0,1}.*\..+)/
+            or $_ =~ m/XXXX[A-Z]{0,1}.\/Peeling\/(XXXX[A-Z]{0,1}.*\..+)/ )
+        {
+            chomp $_;
+            my $old = $1;
+            my $new = $1;
+            $new =~ s/XXXX[A-Z]{0,1}/$name/;
+            my $file = $_;
+            $_ =~ s/$old/$new/;
+            `mv $file $_`;
+            sleep 1 while ( !( -e "$_" ) );
+        }
+    }
+
+    my @dir = `find $path/ -name XXXX* -type d`;
+
+    #print "@dir\n";
+
+    for (@dir) {
+        chomp $_;
+        my $old = $_;
+        my $new = $_;
+        $new =~ s/XXXX[A-Z]{0,1}/$name/;
+        `mv $old $new\n`;
+        sleep 1 while ( !( -e "$new" ) );
+    }
+    
+    `mkdir $path/PDBs_Stand/$name`;
+    `mv $path/PDBs_Stand/XXXX* $path/PDBs_Stand/$name`;
+    sleep 1 while ( !( -e "$path/PDBs_Stand/$name" ) );
+    `mv $path/XXXX* $path/$name`;
+    sleep 1 while ( !( -e "$path/$name" ) );
+
+    `mv $path/PDBs_Clean/XXXX* $path/PDBs_Clean/$name`;
+
+    my @files2 = `find $path/PDBs_Clean/$name -name XXXX* -type f`;
+
+    for (@files2) {
+        if ( $_ =~ m/XXXX/ ) {
+            chomp $_;
+            my $old = $_;
+            my $new = $old;
+            $new =~ s/XXXX/$name/g;
+
+            #my $file = $_;
+            #$_ =~ s/$old/$new/;
+            `mv $old $new`;
+            sleep 1 while ( !( -e "$new" ) );
+        }
+    }
+
+    open( F, "$path/PDBs_Clean/$name/Peeling/Peeling.log" )
+      or die "Cannot open $path/PDBs_Clean/$name/Peeling/Peeling.log : $!\n";
+    my @tab_peeling_log = <F>;
+    close F;
+
+    open( F, ">$path/PDBs_Clean/$name/Peeling/Peeling.log" )
+      or die "Cannot open $path/PDBs_Clean/$name/Peeling/Peeling.log : $!\n";
+    foreach my $line (@tab_peeling_log) {
+        $line =~ s/XXXX/$name/g;
+        print F "$line";
+    }
+    close F;
+}    # sub restore_name
+
+sub cindex {
+    my $ref   = shift;
+    my @array = @{$ref};
+
+    my $c5 = 0;
+    my $c4 = 0;
+    my $c3 = 0;
+    my $c2 = 0;
+    my $c1 = 0;
+
+    my $cindex = 0;
+
+    foreach (@array) {
+        $c5++ if ( $_ >= 5 );
+        $c4++ if ( $_ >= 4 );
+        $c3++ if ( $_ >= 3 );
+        $c2++ if ( $_ >= 2 );
+        $c1++ if ( $_ >= 1 );
+    }
+
+    $cindex = '+'     if ( $c1 >= 1 );
+    $cindex = '++'    if ( $c2 >= 2 );
+    $cindex = '+++'   if ( $c3 >= 3 );
+    $cindex = '++++'  if ( $c4 >= 4 );
+    $cindex = '+++++' if ( $c5 >= 5 );
+
+    return $cindex;
+}
+
+sub helper {
+    print
+      "\n",
+      "\t", '  _____  _    _  _________________  ', "\n",
+      "\t", ' /  ___|| |  | ||  _  | ___ \  _  \ ', "\n",
+      "\t", ' \ `--. | |  | || | | | |_/ / | | | ', "\n",
+      "\t", '  `--. \| |/\| || | | |    /| | | | ', "\n",
+      "\t", ' /\__/ /\  /\  /\ \_/ / |\ \| |/ /  ', "\n",
+      "\t", ' \____/  \/  \/  \___/\_| \_|___/   ', "\n",
+      "\t", '                            v1.0    ', "\n",
+      "\n",
+      "\tSWift and Optimized Recognition of structural Domains\n",
+      "\n",
+      "\n",
+      "\tUsage:\n",
+      "\t$0 -i structure [-d] [-p I/O_dir] [-c chain] [-m max assignments] [-v]\n",
+      "\n",
+      "\tOptions:\n",
+      "\t-i, --input          input: either a PDB entry (4 characters) or a structure file; defines I/O_dir\n",
+      "\t-d, --download       required if query PDB file not in I/O_dir (will download from ftp.wwpdb.org)\n",
+      "\t-p, --path           if --download: input/output directory (default: ./)\n",
+      "\t-c, --chain          chain name (1 character, facultative); if not given, all chains will be processed\n",
+      "\t-m, --max            3, 9 or 15: maximum number of alternative assignments (default = 3)\n",
+      "\t-s, --size           from 15 to 99: minimal size of Protein Unit (default = 15)\n",
+      "\t-r, --dir            path to the working directory in which some outputs will be generated. Ex: ./work",
+      "\t-v, --verbose        RECOMMANDED: all steps printed on STDOUT\n",
+      "\n";
+    exit 1;
+}    # sub helper
+
+main();
+
+__END__
+
+© Univ. Paris Diderot & INSERM, 2015
+
+guillaume.postic@univ-paris-diderot.fr
+jean-christophe.gelly@univ-paris-diderot.fr (for the first version and actual modified version)
+
+This software is a computer program whose purpose is to identify protein
+domains through the hierarchical clustering of Protein Units (PUs),
+which are substructures describing the protein architecture at an
+intermediate level, between secondary structures and domains. For a
+given protein structure, SWORD can provide multiple alternative
+decompositions into domains. SWORD is a Perl program compatible with
+Unix-like OS.
+
+This software is governed by the CeCILL  license under French law and
+abiding by the rules of distribution of free software.  You can  use,
+modify and/ or redistribute the software under the terms of the CeCILL
+license as circulated by CEA, CNRS and INRIA at the following URL
+"http://www.cecill.info".
+
+As a counterpart to the access to the source code and  rights to copy,
+modify and redistribute granted by the license, users are provided only
+with a limited warranty  and the software's author,  the holder of the
+economic rights,  and the successive licensors  have only  limited
+liability.
+
+In this respect, the user's attention is drawn to the risks associated
+with loading,  using,  modifying and/or developing or reproducing the
+software by the user in light of its specific status of free software,
+that may mean  that it is complicated to manipulate,  and  that  also
+therefore means  that it is reserved for developers  and  experienced
+professionals having in-depth computer knowledge. Users are therefore
+encouraged to load and test the software's suitability as regards their
+requirements in conditions enabling the security of their systems and/or
+data to be ensured and,  more generally, to use and operate it in the
+same conditions as regards security.
+
+The fact that you are presently reading this means that you have had
+knowledge of the CeCILL license and that you accept its terms.
+

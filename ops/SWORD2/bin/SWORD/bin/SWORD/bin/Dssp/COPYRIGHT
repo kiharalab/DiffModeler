@@ -1,0 +1,64 @@
+
+
+                           DSSP
+            by Wolfgang Kabsch and Chris Sander
+
+Defines secondary structure and solvent exposure of proteins from
+atomic coordinates as given in Protein Data Bank format.
+
+_________________________________________________________________________
+This executable version of DSSP may be downloaded from
+ftp.embl-heidelberg.de and used freely for test purposes until the
+end of January 1995. Log in as anonymous and the give your name
+and email address. Do not redistribute.
+
+After that date, the following restrictions apply:
+
+(1) This version should be deleted.
+(2) A new improved executable versions will be available from
+    ftp.embl-heidelberg.de for academic purposes.
+(3) The source code of the program including sample input and
+    output files for dataset 1PPT is available on a permanent basis
+    from the authors in exchange for an academic or commercial
+    license agreement.
+(4) Registered users that already have a licence may request
+    the new and improved 1995 version.
+
+Copyright by Wolfgang Kabsch and Chris Sander, 1983, 1985, 1988, 1994.
+Max Planck Institut fuer Medizinische Forschung
+and EMBL, 69012 Heidelberg, Germany. Fax: +49-6221-387 306
+
+Algorithm version October 1988. Refer to Biopolymers 22(1983) 2577-2637.
+Do report errors if you find any.
+
+Email: Sander@embl-heidelberg.de
+       Kabsch@embl-heidelberg.de
+
+March 1994 improvements by Michael Scharf and Chris Sander.
+
+_________________________________________________________________________
+Related databases and datasets available from the Protein
+Design Group at EMBL via anonymous ftp from embl-heidelberg.de:
+
+pdb_select   Representative set of protein structures.
+             By U. Hobohm, C. Sander, M. Scharf and R. Schneider.
+             See Protein Science 1, 409-417.
+DSSP         Dictionary of secondary structures of proteins.
+HSSP         Database of sequence-homology derived protein families.
+             By C. Sander and R.Schneider.
+             See Proteins 9, 56-68 (1991).
+FSSP         Database of protein structure families with
+             common folding motifs.
+             L.Holm, C. Ouzounis, C. Sander, G.Tuparev, G. Vriend
+             See Protein Science, in the press (1992).
+In the XSSP databases, there is one dataset for each unique or
+             representative PDB protein, e.g., 1PPT.HSSP etc.
+
+Restrictions:Commercial users must apply for a license.
+             Not to be used for classified research.
+*************************************************************************
+  A copy of the source of the latest version of DSSP can be requested
+             from sander@embl-heidelberg.de (Chris Sander)
+  Executables are available from ftp.embl-heidelberg.de in the directories
+        /pub/software/...  and /pub/databases/protein_extras/dssp/...
+*************************************************************************

@@ -250,7 +250,7 @@ def get_quality_as_nb_bars(quality):
     return len(quality) if quality != "n/a" else 0
 
 
-def write_partitionings_json(sword_results, energies):
+def write_partitionings_json(sword_results):
     """
     Write the partitionnings into JSON formatted file
 
@@ -278,17 +278,7 @@ def write_partitionings_json(sword_results, energies):
             alt_part_json["Quality"] = "*" * nb_bars
             alt_part_json["Nb. domains"] = len(alt_part["BOUNDARIES"])
             alt_part_json['BOUNDARIES']=alt_part["BOUNDARIES"]
-            # domains_json = {}
-            # for i, dom in alt_part["BOUNDARIES"].items():
-            #     domain_json = []
-            #     domain_json.append(("AUL", int((1-(1/(energies[(nb_alt_part, i)][1])**2))*100) if abs(energies[(nb_alt_part, i)][1]) >= 1 else 0))
-            #     domain_json.append(("Z-score", round(energies[(nb_alt_part, i)][1], 1)))
-            #     p_unit_json = {}
-            #     for j, (start_pu, end_pu) in enumerate(dom):
-            #         p_unit_json[f"{str(start_pu)}-{str(end_pu)}"] = {"AUL": int((1-(1/(energies[(nb_alt_part, i, start_pu, end_pu)][1])**2))*100) if abs(energies[(nb_alt_part, i, start_pu, end_pu)][1]) >= 1 else 0, "Z-score": round(energies[(nb_alt_part, i, start_pu, end_pu)][1], 1)}
-            #     domain_json.append(("PUs", p_unit_json))
-            #     domains_json[f"Domain {i+1}"] = dict(domain_json)
-            # alt_part_json["Domains"] = domains_json
+           
             json_results[alt_part_json["Partition"]] = alt_part_json
         f.write(json.dumps(json_results, indent=4))
 
@@ -381,109 +371,8 @@ def predict_time(prot):
     return str(int(133*math.exp(2.06*10**-3*len(set(prot.getResnums())))/60))
 
 
-def get_energy_and_z_score(BIN_DIR, pdb, res_list=None):
-    """
-    Calculate pseudo-energy and z-score of a protein or specified residue list
-    of the input pdb.
-    List is res+chain: 10A,11A,12A,13A
-    """
-    if res_list:
-        cmd_args = f"{BIN_DIR}/mypmfs-master/scoring -i {pdb} -d {BIN_DIR}/mypmfs-master/025_30_100_potential -q {res_list} -z -s 2000"
-    else:
-        cmd_args = f"{BIN_DIR}/mypmfs-master/scoring -i {pdb} -d {BIN_DIR}/mypmfs-master/025_30_100_potential -z -s 2000"
-    cmd_args = shlex.split(cmd_args)
-    output = subprocess.run(cmd_args, capture_output=True, check=True)
-    output = output.stdout.decode("utf-8")
-    output = output.split("\n")
-    energy = None
-    z_score = None
-    for line in output:
-        pseudo_e_found = re.search(r"^Pseudo-energy = (.+)$", line)
-        z_score_found = re.search(r"^Z-score = (.+)$", line)
-        if pseudo_e_found:
-            energy = float(pseudo_e_found.group(1))
-        if z_score_found:
-            z_score = float(z_score_found.group(1))
-    return energy, z_score
 
 
-def multiprocess_get_energy(i, pdb_chain, pdb_id_chain, RESULTS_DIR, BIN_DIR, energies, dom_bounds):
-    """
-    Calculate the energy and Z-score of PUs and Domains.
-
-    Args:
-        - i: index of partitionning
-        - energies: dictionary to hold the results
-        - dom_bounds: Boundaries of domains and PUs to calculate
-    """
-    j, domain = dom_bounds
-    # Residues of the domain gathered little by little
-    dom_residues = ""
-    # Python multiprocessing is shit and cannot handle dict of dict.
-    # So I have to use a tmp list for this little buddy...
-    tmp_list = []
-    for start_pu, end_pu in domain:
-        pu_residues = ""
-        dom_residues += ",".join([f"{str(x) + pdb_chain}" for x in range(start_pu, end_pu+1)]) + ","
-        pu_residues += ",".join([f"{str(x) + pdb_chain}" for x in range(start_pu, end_pu+1)])
-        pu_energy, pu_z_score = get_energy_and_z_score(BIN_DIR, f"{RESULTS_DIR}/{pdb_id_chain}", pu_residues)
-        energies[(i, j, start_pu, end_pu)] = []
-        tmp_list = energies[(i, j, start_pu, end_pu)]
-        tmp_list.extend([pu_energy, pu_z_score])
-        energies[(i, j, start_pu, end_pu)] = tmp_list
-    dom_energy, dom_z_score = get_energy_and_z_score(BIN_DIR, f"{RESULTS_DIR}/{pdb_id_chain}", dom_residues)
-    energies[(i, j)] = []
-    tmp_list = energies[(i, j)]
-    tmp_list.extend([dom_energy, dom_z_score])
-    energies[(i, j)] = tmp_list
-
-
-def write_peeling_results():
-    """
-    Parse Protein Peeling 3 results and calculate pseudo energy and AUL for
-    all Protein Units.
-
-    Args:
-        - energies (dict): 
-    """
-    # Get old resnums
-    peeling_num = os.path.join(RESULTS_DIR, "PDBs_Clean", pdb_id_chain, f"{pdb_id_chain}.num")
-    with open(peeling_num, "r") as f:
-        ori_resnums = [int(resnum) for resnum in f.readline().split()]
-    # Parse Peeling.log
-    peeling_results = {}
-    peeling_log = os.path.join(RESULTS_DIR, "PDBs_Clean", pdb_id_chain, "Peeling", "Peeling.log")
-    with open(peeling_log, "r") as f:
-        # Index of the alternative partitionings
-        nb_lvl = 1
-        # Dict containing all the informations given by Peeling output
-        for line in f:
-            if not line.startswith("#") and line != "\n":
-                line = line.split()
-                peeling_results[nb_lvl] = {}
-                peeling_results[nb_lvl]["i/e"] = float(line[0])
-                peeling_results[nb_lvl]["i/i+e"] = float(line[1])
-                peeling_results[nb_lvl]["R2"] = float(line[2])
-                peeling_results[nb_lvl]["CI"] = float(line[3])
-                peeling_results[nb_lvl]["N"] = int(line[4])
-                # Retrieve only the PUs
-                # store them as a list of tuples
-                peeling_results[nb_lvl]["PUs"] = [(ori_resnums[int(line[5+i]) - 1], ori_resnums[int(line[5+i+1]) - 1]) for i in range(0, len(line[5:])-1, 2)]
-                # Sorte by inceasing boundaries
-                peeling_results[nb_lvl]["PUs"] = sorted(peeling_results[nb_lvl]["PUs"], key=lambda x: x[0]) 
-                nb_lvl += 1
-    
-    # WRITE THE RESULTS
-    logging.info("Calculate pseudo-energies of PUs")
-    peeling = os.path.join(RESULTS_DIR, "PEELING_summary.txt")
-    with open(peeling, "w") as f:
-        for lvl, data in peeling_results.items():
-            f.write(f"""Peeling level {lvl}\n    Number of Protein Units: {data["N"]}\n    Compaction Index: {round(data["CI"], 2)}\n""")
-            for start_pu, end_pu in data["PUs"]:
-                pu_residues = ",".join([f"{str(x) + pdb_chain}" for x in range(start_pu, end_pu+1)])
-                pu_energy, pu_z_score = get_energy_and_z_score(BIN_DIR, f"{RESULTS_DIR}/{pdb_id_chain}", pu_residues)
-                f.write(f"""    {str(start_pu)+"-"+str(end_pu):>7}: AUL={int((1-(1/(pu_z_score)**2))*100) if abs(pu_z_score) >= 1 else 0:3}% Z-score={round(pu_z_score, 1)}\n""")
-    logging.info("Write the Peeling results")
 
 if __name__ == '__main__':
 
@@ -706,25 +595,12 @@ if __name__ == '__main__':
 
     sword_results = parse_sword(output)
 
-    #####################################################
-    # Calculate the energy and Z-score of PUs and Domains
-    #####################################################
-
-    logging.info("Calculate pseudo-energies of Domains")
-    manager = multiprocessing.Manager()
-    energies = manager.dict()
-    for i, part in sword_results["DOMAINS"].items():
-        with multiprocessing.Pool(processes=nb_cpu) as p:
-            FUNC = partial(multiprocess_get_energy, i, pdb_chain, pdb_id_chain, RESULTS_DIR, BIN_DIR, energies)
-            p.imap_unordered(FUNC, list(part["BOUNDARIES"].items()))
-            p.close()
-            p.join()
 
     ############################
     # Write  SWORD partitionings
     ############################
 
    
-    write_partitionings_json(sword_results, energies)
+    write_partitionings_json(sword_results)
 
     

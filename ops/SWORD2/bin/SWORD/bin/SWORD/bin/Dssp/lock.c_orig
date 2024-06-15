@@ -1,0 +1,57 @@
+#include "stdio.h"
+#include "stdlib.h"
+
+
+static char *gLicenseString="%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%";
+#define CHECKSUM "0000000000"
+static char *gChecksum=CHECKSUM;
+
+static long CalcChecksum(char *str)
+{
+    register long h= 250461, g;
+    register char *p= str;
+    int seed=3;
+    while (*p != 0) {
+	h= (h << 4) + *p++ + seed++;
+	if ((g= h & 0xf000000) != 0)
+	    h= (h ^ (g >> 24)) ^ g;
+    }
+    return h;
+}
+
+static long DecodeChecksum(char* checksum)
+{
+    char decoded[]=CHECKSUM;
+    int i;
+    int offset='0'-1;
+    for(i=0;checksum[i]!=0;i++)
+	decoded[i]=checksum[i]+offset;
+    return atol(decoded);
+}
+
+int HasLicense() 
+{
+    return CalcChecksum(gLicenseString)==DecodeChecksum(gChecksum);
+}
+
+char* GetLicenseString()
+{
+    char *p=gLicenseString;
+    while(*p!=0 && *p=='%')
+	p++;
+    return p;
+}
+
+#ifdef TEST
+int
+main()
+{
+    printf("This program is licensed to:\n%s\n",GetLicenseString());
+    printf("%d -> %d\n",DecodeChecksum(gChecksum),CalcChecksum(gLicenseString));
+    if(!HasLicense()) {
+	printf("***You don't have a License!\n");
+	exit(-1);
+    }
+    return 0;
+}
+#endif

@@ -1,0 +1,83 @@
+<HTML>
+<HEAD>
+  <BASE HREF="http://www.cmbi.kun.nl/structure.shtml">
+  <TITLE>Protein structure</TITLE>
+</HEAD>
+
+<!--#include virtual="/header.html"-->
+
+<BODY>
+<P>
+<TABLE BORDER=0 CELLSPACING="0" WIDTH="100%">
+<TR><TH CLASS="bioinformatics-header">The DSSP database</TH></TR></TABLE>
+<P>
+
+The DSSP program was designed by Wolfgang Kabsch and Chris Sander to standardize 
+secondary structure assignment. The DSSP database is a database of secondary 
+structure assignments (and much more) for all protein entries in the Protein 
+Data Bank (PDB). 
+
+<H2>Information</H2>
+<UL>
+<LI>The <A HREF="/gv/dssp/descrip.html">help document</A> for the DSSP program. 
+<LI>The <A HREF="/gv/dssp/license.html">license form</A> for an academic DSSP source code. 
+<LI>The <A HREF="/gv/dssp/license_com.html">license form</A> for a commercial DSSP source code. 
+<LI>A <A HREF="/gv/dssp/bill.html">bill</A> for commercial users. 
+<LI><STRONG>AFTER</STRONG> faxing the license form to the FAX number indicated at the 
+    form (+31 (0)24 3652977) you can extract the DSSP distribution by clicking <A HREF="ftp://ftp.cmbi.kun.nl/pub/molbio/software/DsspCMBI.tar.gz">here</A> or from the anonymous FTP area of ftp.cmbi.kun.nl. Do a cd to
+    pub/molbio/software and download DsspCMBI.tar.gz . In any case, type <STRONG>tar -xvzf DsspCMBI.tar.gz</STRONG> to unpack, then look at README.TXT.
+<LI>Precompiled executables are also available for <A HREF="/gv/dssp/dsspcmbi">Linux</A>
+    and <A HREF="/gv/dssp/DSSPCMBI.EXE">Windows</A>. (The Windows .exe
+    file was compiled under Linux using Mingw32, has never seen a Windows environment
+    and should thus be virus-free. Download the source if you want to be 100% sure.)
+    Under Windows the DSSP output does not make it to the console, so redirect it
+    to a file instead: dsspcmbi source.pdb destination.dssp >messages.txt
+<LI>Several changes have been made to the DSSP program to solve problems with recent
+    PDB files. These are documented in the source code.
+<LI>Commercial users are requested to transfer Euro 1000 to account number
+    of the "Stichting WHAT IF" no. 54.83.62.262 at the ABN-AMRO in Nijmegen.
+    Please mention DSSP. Please transfer the money before down-loading the software.
+
+
+<LI>We have <A HREF="/gv/dssp/PDBFIND2.TXT">available</A> <STRONG>(warning, that is 23 MEGA bytes)</STRONG>
+    a version of the PDBFINDER with the secondary structure
+    according to DSSP indicated as 1-letter code strings. Look at the 
+    <A HREF="/gv/dssp/PDBFINDER_example.html">example</A>.
+<LI>FTP access to the <A HREF="ftp://ftp.embl-heidelberg.de/pub/databases/protein_extras/dssp">database files</A> at the EMBL (many files).
+<LI>Secondary structure and a bit more but <A HREF="/gv/dssp/files/HTDSSS/summary.html">in a different format</A>. 
+    (There is some <A HREF="/gv/dssp/help.html">help</A> for this format).
+</UL>
+
+<H2>'News'</H2>
+<P>In 1994, a fast algorithm for surface calculation was added to the accessibility module.<BR>
+The July-1995 version has a slightly changed <A HREF="/gv/dssp/new-format.html">output format</A>. and several runtime options under unix. Over the years many people have contributed to the maintenance
+of DSSP. Most noticebly Michael Scharf and <A HREF="http://www.hooft.net/people/rob/">Rob
+Hooft</A>. In 2000 maintenance was taken over by <A HREF="http://www.yasara.com">Elmar
+Krieger</A>.
+
+<H2>Reference</H2>
+<I>Dictionary of protein secondary structure: pattern recognition of hydrogen-bonded 
+and geometrical features.</I><BR>
+Biopolymers. 1983 Dec;22(12):2577-637. <BR>
+PMID: 6667333; UI: 84128824.
+
+<H2>The DSSP code</H2>
+<UL>
+<LI>H = alpha helix
+<LI>B = residue in isolated beta-bridge
+<LI>E = extended strand, participates in beta ladder
+<LI>G = 3-helix (3/10 helix)
+<LI>I = 5 helix (pi helix)
+<LI>T = hydrogen bonded turn
+<LI>S = bend
+</UL>
+
+<H2>Problems?</H2>
+In case of problems, feel free to contact me via Email at
+"Vriend@CMBI.KUN.NL". I am neither the author of DSSP, nor the person who
+gets the money (...), but I will help if I can.
+<P>
+<ADDRESS><A HREF="/gv/legal.html">&copy;</A> June 21 2000 <A HREF="mailto:vriend@cmbi.kun.nl">G Vriend</A></ADDRESS>
+</BODY>
+</HTML>
+
