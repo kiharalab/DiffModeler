@@ -148,7 +148,7 @@ if __name__ == "__main__":
         domain_template_dir = os.path.join(save_path,"domain_template_input")
         final_fitting_dict = prepare_domain_input(final_fitting_dict,
                                             domain_template_dir,
-                                            num_cpu=params['search_thread'])
+                                            num_cpu=params['SWORD_thread'])
         print("Domain split finished!",final_fitting_dict)
     #diffusion inference
     diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)

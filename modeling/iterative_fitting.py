@@ -1,7 +1,7 @@
 import os
 from ops.os_operation import mkdir
 from modeling.score_utils import sort_dict_by_value_desc,clean_score_dict,find_biggest_unvisited_chain
-from modeling.pdb_utils import find_identical_chain,find_chain_pdb_path,remove_overlap_pdb,rename_chains_cif,calculate_overlap_score
+from modeling.pdb_utils import find_identical_chain,find_chain_pdb_path,remove_overlap_pdb,rename_chains_pdb2cif,calculate_overlap_score
 from modeling.fit_structure_chain import fit_single_chain
 from modeling.map_utils import mask_map_by_pdb,segment_map,format_map,mask_map_by_pdb_slow
 from modeling.pdb_utils import extract_residue_locations
@@ -157,7 +157,7 @@ def iterative_fitting(diff_trace_map,diff_ldpmap_path,
     print("still remains %d chains"%len(chain_remains))
 
     finalnew_pdb_path = os.path.join(current_output_dir,"final_rechain.cif")
-    rename_chains_cif(final_pdb_output,current_assign_chain,finalnew_pdb_path)
+    rename_chains_pdb2cif(final_pdb_output,current_assign_chain,finalnew_pdb_path)
 
 
 

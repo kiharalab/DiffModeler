@@ -111,6 +111,56 @@ def rename_chains(pdb_file, new_chain_name, output_file):
     io = PDBIO()
     io.set_structure(structure)
     io.save(output_file)
+def rename_chains_cif(cif_input_file, chain_map_dict, output_file):
+    begin_check=False
+    block_list=[]
+    with open(cif_input_file,'r') as rfile:
+        for line in rfile:
+            if "loop_" in line:
+                begin_check=True
+                continue
+
+            if begin_check and "_atom_site" in line:
+                block_list.append(line.strip("\n").replace(" ",""))
+                continue
+            if begin_check and "_atom_site" not in line:
+                begin_check=False
+    
+    try:
+        chain_ids = block_list.index("_atom_site.auth_asym_id")
+    except:
+        chain_ids = block_list.index("_atom_site.label_asym_id")
+    
+    
+    #write new cif with chain changed specified by the dict
+    with open(cif_input_file,'r') as rfile:
+        with open(output_file,'w') as wfile:
+            #writee header
+            # wfile.write("chain_%s\n"%select_chain_name)
+            # wfile.write("#\nloop_\n")
+            # for block_id in block_list:
+            #     wfile.write("%s\n"%block_id)
+            for line in rfile:
+                if len(line)>4 and line[:4]=="ATOM":
+                    split_info=line.strip("\n").split()
+                    current_chain = split_info[chain_ids]
+                    if current_chain not in chain_map_dict:
+                        continue
+                    new_chain = chain_map_dict[current_chain]
+                    
+                    for j,item in enumerate(split_info):
+                        if j==chain_ids:
+                            wfile.write("%s  "%new_chain)
+
+                        else:
+                            wfile.write("%s  "%item)
+                        
+                    wfile.write("\n")
+                    
+                else:
+                    wfile.write(line)
+    return output_file
+
 
 # def rename_chains_cif(pdb_file, new_chain_name, output_file):
 #     """
@@ -365,6 +415,38 @@ def cif2pdb(input_cif_path,final_pdb_path):
                                                              current_res_name, current_chain,current_res_index)
                     wline = wline + "%8.3f%8.3f%8.3f%6.2f%6.2f\n" % (current_x,current_y,current_z, current_occupency,current_bfactor)
                     wfile.write(wline)
+
+def get_cif_chain_list(input_cif_path):
+    begin_check=False
+    block_list=[]
+    with open(input_cif_path,'r') as rfile:
+        for line in rfile:
+            if "loop_" in line:
+                begin_check=True
+                continue
+
+            if begin_check and "_atom_site" in line:
+                block_list.append(line.strip("\n").replace(" ",""))
+                continue
+            if begin_check and "_atom_site" not in line:
+                begin_check=False
+    try:
+        chain_ids = block_list.index("_atom_site.auth_asym_id")
+    except:
+        chain_ids = block_list.index("_atom_site.label_asym_id")
+    chain_list=[]
+    with open(input_cif_path,'r') as rfile:
+        for line in rfile:
+            if len(line)>4 and line[:4]=="ATOM":
+                split_info=line.strip("\n").split()
+                current_chain = split_info[chain_ids]
+                if current_chain not in chain_list:
+                    chain_list.append(current_chain)
+    chain_list= set(chain_list)
+    return chain_list
+
+# def rename_chain_cif(input_cif_path,chain_dict,output_cif_path):
+
 def filter_chain_pdb(pdb_file_path, chain_name, output_file_path):
     """
     Read a PDB file, replace each chain ID based on a dictionary mapping, and write the modified PDB file to disk.

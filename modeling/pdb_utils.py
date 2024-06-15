@@ -1,5 +1,5 @@
 
-from ops.pdb_utils import reindex_cif
+from ops.pdb_utils import reindex_cif,rename_chains_cif
 
 def remove_hetatm_lines(input_file, output_file):
     """
@@ -162,7 +162,7 @@ def calculate_overlap_score(score_dict,clash_dict,fitted_pdb,clash_distance=3,sp
             clash_dict[key]+=ratio_close
     return clash_dict
 
-def rename_chains_cif(pdb_file,  new_chain_id,cif_file):
+def rename_chains_pdb2cif(pdb_file,  new_chain_id,cif_file):
     # Read the PDB file
     with open(pdb_file, 'r') as f:
         pdb_lines = f.readlines()
@@ -245,3 +245,27 @@ def collect_final_pdb(modeling_dir,chain_visit_dict):
     final_cif_path = os.path.join(modeling_dir,"Final.cif")
     reindex_cif(final_pdb_path,final_cif_path)
     return final_cif_path
+
+def collect_domain_pdb(modeling_dir,chain_visit_dict):
+    final_pdb_path = os.path.join(modeling_dir,"DiffModeler_domain.cif")
+    first_structure=True
+    with open(final_pdb_path,'w') as wfile:
+        for chain in chain_visit_dict:
+            current_dir=os.path.join(modeling_dir,"iterative_%s"%chain)
+            old_cif_path = os.path.join(current_dir,"final_rechain.cif")
+            tmp_cif_path = os.path.join(current_dir,"final_domain2chain.cif")
+            real_chain_id = chain.split("_")[0]
+            chain_map_dict = {chain:real_chain_id}#can only be used since old chain id includes it
+            rename_chains_cif(old_cif_path, chain_map_dict, tmp_cif_path)
+            
+            with open(tmp_cif_path,'r') as rfile:
+                if first_structure:
+                    for line in rfile:
+                        wfile.write(line)
+                else:
+                    for line in rfile:
+                        if len(line)>=4 and line[:4]=="ATOM":
+                            wfile.write(line)
+            first_structure=False
+
+    return final_pdb_path

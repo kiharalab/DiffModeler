@@ -45,4 +45,11 @@ def  assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,par
                   map_ldp_pdb_path,chain_visit_dict,chain_length_score,params)
 
     final_path=collect_final_pdb(modeling_dir,chain_visit_dict)
+    if params['domain']:
+
+        #also generate a cif with original chain id instead of domain chain ids [chainid_domainid] format
+        from modeling.pdb_utils import collect_domain_pdb
+        final_new_path = collect_domain_pdb(modeling_dir,chain_visit_dict)
+        print("The domain based chain name cif is saved at %s"%final_path)
+        final_path = final_new_path 
     return final_path

@@ -37,8 +37,12 @@ def prepare_domain_input(fitting_dict,save_dir,num_cpu=8):
         pdb_name = os.path.basename(pdb_path).replace(".pdb","")
         pdb_dir = os.path.join(save_dir,pdb_name)
         os.makedirs(pdb_dir,exist_ok=True)
-        #split pdb into different domains
-        command_line=f"python3 {sword_script_path} -i {pdb_path} -o {pdb_dir} -c A --cpu {num_cpu}"
+        if num_cpu>0:
+            #split pdb into different domains
+            command_line=f"python3 {sword_script_path} -i {pdb_path} -o {pdb_dir} -c A --cpu {num_cpu}"
+        else:
+            #0 indicates use all cpu available
+            command_line=f"python3 {sword_script_path} -i {pdb_path} -o {pdb_dir} -c A"
         os.system(command_line)
         cur_output_dir=os.path.join(pdb_dir,f"{pdb_name}_A")
         if not os.path.exists(cur_output_dir):
@@ -58,7 +62,7 @@ def prepare_domain_input(fitting_dict,save_dir,num_cpu=8):
             #    
             domain_pdb_path = os.path.join(save_dir,f"{pdb_name}_{domain_name}.pdb")
             filter_pdb_by_residues(pdb_path,domain_pdb_path,residue_index_list)
-            current_chain_ids = [x+str(domain_name) for x in chain_ids]
+            current_chain_ids = [x+"_"+str(domain_name) for x in chain_ids]
             domain_fitting_dict[domain_pdb_path]=current_chain_ids
             print(f"Domain {domain_name} for {pdb_path} is saved at {domain_pdb_path}")
     pickle.dump(domain_fitting_dict,open(domain_fitting_dict_path,"wb"))
