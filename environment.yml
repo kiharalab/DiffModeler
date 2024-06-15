@@ -23,3 +23,6 @@ dependencies:
       - BioTEMPy==2.1.0
       - xmltramp2
       - requests
+      - plotly
+      - prody
+      - kaleido

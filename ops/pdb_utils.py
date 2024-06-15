@@ -316,6 +316,7 @@ def cif2pdb(input_cif_path,final_pdb_path):
     
     tmp_chain_list=[chr(i) for i in range(ord('A'), ord('Z') + 1)]  # uppercase letters
     tmp_chain_list.extend([chr(i) for i in range(ord('a'), ord('z') + 1)])  # lowercase letters
+    tmp_chain_list+=[str(kk) for kk in range(10)]
     #pre filter chain name list
     with open(input_cif_path,'r') as rfile:
         for line in rfile:
@@ -434,6 +435,13 @@ def rewrite_pdb_occupency(pdb_path,new_pdb_path,score):
     print("rewrite pdb %s with score %.2f to occupency"%(new_pdb_path,score))
 
 def clean_pdb_template(fitting_dict,final_template_dir):
+    """
+    check valid pdb and rename every chain id to "A" to avoid any possible problems
+    :param fitting_dict: [pdb_path]:[list of chain_id]
+    :param final_template_dir:  output directory
+    :return:
+        fitting_dict    [new_pdb_path]:[list of chain_id]
+    """
     os.makedirs(final_template_dir,exist_ok=True)
     final_dict={}
     pdb_index=0
@@ -453,10 +461,29 @@ def clean_pdb_template(fitting_dict,final_template_dir):
                             z=float(line[46:54])
                             nuc_id=int(line[22:26])
                             resn = line[17:20]
-                            wfile.write(line)
+                            wfile.write(line[:21]+"A"+line[22:])
                         except:
                             print("!!!error in line\n%s"%line)
 
         final_dict[new_pdb_path]=fitting_dict[key]
         pdb_index+=1
     return final_dict
+
+def filter_pdb_by_residues(input_pdb_path,output_pdb_path,residue_list):
+    """
+    filter pdb by residue list
+    :param input_pdb_path:
+    :param output_pdb_path:
+    :param residue_list:
+    :return:
+    """
+    residue_set = set(residue_list)
+    with open(input_pdb_path,'r') as rfile:
+        with open(output_pdb_path,'w') as wfile:
+            for line in rfile:
+                if line.startswith("ATOM") or line.startswith("HETATM"):
+                    res_index = int(line[22:26])
+                    if res_index in residue_set:
+                        wfile.write(line)
+                else:
+                    wfile.write(line)

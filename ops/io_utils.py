@@ -2,6 +2,8 @@ import os.path
 import os
 from collections import defaultdict
 import shutil
+import json
+from collections import OrderedDict
 def read_structure_txt(input_dir,input_file_path):
     structure_dict={}
     with open(input_file_path,'r') as rfile:
@@ -75,3 +77,12 @@ def delete_dir(input_dir):
             shutil.rmtree(input_dir)
     except:
         print("Fail to delete %s"%input_dir)
+
+def load_json(path):
+    json_str = ''
+    with open(path, 'r') as f:
+        for line in f:
+            line = line.split('//')[0] + '\n'
+            json_str += line
+    opt = json.loads(json_str, object_pairs_hook=OrderedDict)
+    return opt

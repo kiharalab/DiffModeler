@@ -20,6 +20,7 @@ def argparser():
     parser.add_argument('--fast',  action='store_true', help="Specify where to use fast version or not")
     parser.add_argument("--seq_search",action='store_true',help="only search sequence against db, for server usage")
     parser.add_argument("--af_only",action='store_true',help="only search sequence against AlphaFold db, for benchmark usage")
+    parser.add_argument("--domain",action='store_true',help="use domain based structure for modeling, split one single-chain to multiple possible domains")
     args = parser.parse_args()
     # remove comments starting with '//'
     json_str = ''

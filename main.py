@@ -143,6 +143,13 @@ if __name__ == "__main__":
     from ops.pdb_utils import clean_pdb_template
     final_fitting_dict=clean_pdb_template(fitting_dict,final_template_dir)
 
+    if params['domain']:
+        from ops.domain_utils import prepare_domain_input
+        domain_template_dir = os.path.join(save_path,"domain_template_input")
+        final_fitting_dict = prepare_domain_input(final_fitting_dict,
+                                            domain_template_dir,
+                                            num_cpu=params['search_thread'])
+        print("Domain split finished!",final_fitting_dict)
     #diffusion inference
     diff_trace_map = diffusion_trace_map(save_path,cur_map_path,params)
 
