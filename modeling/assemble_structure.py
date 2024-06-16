@@ -3,6 +3,7 @@ import os
 from ops.io_utils import write_pickle,load_pickle
 from modeling.score_utils import build_score_pool,filter_score_dict,add_structure_size_score
 from modeling.pdb_utils import collect_final_pdb
+from ops.pdb_utils import cif2pdb
 from modeling.iterative_fitting import iterative_fitting
 from ops.os_operation import mkdir
 def  assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,params):
@@ -45,11 +46,20 @@ def  assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,par
                   map_ldp_pdb_path,chain_visit_dict,chain_length_score,params)
 
     final_path=collect_final_pdb(modeling_dir,chain_visit_dict)
+    final_pdb_path = final_path.replace(".cif",".pdb")
+    try:
+        cif2pdb(final_path,final_pdb_path)
+    except:
+        pass
     if params['domain']:
-
         #also generate a cif with original chain id instead of domain chain ids [chainid_domainid] format
         from modeling.pdb_utils import collect_domain_pdb
         final_new_path = collect_domain_pdb(modeling_dir,chain_visit_dict)
+        final_new_pdb_path = final_new_path.replace(".cif",".pdb")
+        try:
+            cif2pdb(final_new_path,final_new_pdb_path)
+        except:
+            pass
         print("The domain based chain name cif is saved at %s"%final_path)
         final_path = final_new_path 
     return final_path
