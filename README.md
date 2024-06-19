@@ -126,8 +126,7 @@ Chimera (for map visualization): https://www.cgl.ucsf.edu/chimera/download.html
 <summary>Command Parameters</summary>
 
 ```commandline
-usage: main.py [-h] --mode MODE [-F F] [-M M] [--config CONFIG] [--gpu GPU] [--output OUTPUT]
-               [--contour CONTOUR]
+usage: main.py [-h] --mode MODE [-F F] [-M M] [--config CONFIG] [--gpu GPU] [--output OUTPUT] [--contour CONTOUR] 
 
 options:
   -h, --help            show this help message and exit
@@ -141,6 +140,10 @@ options:
   --gpu GPU             specify the gpu we will use
   --output OUTPUT       Output directory
   --contour CONTOUR     Contour level for input map, suggested 0.5*[author_contour]. (Float), Default value: 0.0
+  --fast Specify where to use fast version or not (used in server to save computations of fitting with different parameters)
+  --seq_search only search sequence against db, that will get templates but not do structure modeling
+  --af_only only search sequence against AlphaFold DB, for benchmark usage. Default: search RSCB first and then search AFDB
+  --domain  use domain based structure for modeling, split one single-chain to multiple possible domains via SWORD2
 ```
 </details>
 
@@ -153,7 +156,9 @@ It is fine to run if you only know some of the template structures..
 ```commandline
 python3 main.py --mode=0 -F=[Map_Path] -P=[Single_chain_structure_dir] -M=[protin_config_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
-[Map_Path] is the path of the input experimental cryo-EM map, [Single_chain_structure_dir] specifis the directory of all single-chain PDB files. You can also zip them into a zip/.tar/.tar.gz file here to pass the zip file path here. [protin_config_path] is the text file path that records the protein single chain PDB name and corressponding chains, [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
+[Map_Path] is the path of the input experimental cryo-EM map, [Single_chain_structure_dir] specifis the directory of all single-chain PDB files. You can also zip them into a zip/.tar/.tar.gz file here to pass the zip file path here. [protin_config_path] is the text file path that records the protein single chain PDB name and corressponding chains, [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here. <br>
+
+If you want to use domain-based structure modeling, you can simply add the ``--domain`` option. The program will first call SWORD2 to split each single chain into different domains and then model structures using these domain structures. Alternatively, you can use [SWORD2_server](https://www.dsimb.inserm.fr/SWORD2/index.html) to explore different domain splitting choices and provide the domain structureS as single-chain structures to DiffModeler Here DiffModeler can model protein complexes based on the domain templates you provide.
 
 Example of PDB config file
 ```commandline
@@ -191,6 +196,8 @@ python3 main.py --mode=1 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config
 ```
 [Map_Path] is the path of the input experimental cryo-EM map, [fasta_path] specifis the path of sequence file with .fasta format. [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
 <b>Please update ``email`` field in config/diffmodeler.json to your email.</b> 
+
+<br>If you want to use domain-based structure modeling, you can simply add the ``--domain`` option. The program will first call SWORD2 to split each single chain into different domains and then model structures using these domain structures. Alternatively, you can use [SWORD2_server](https://www.dsimb.inserm.fr/SWORD2/index.html) to explore different domain splitting choices and provide the domain structureS as single-chain structures to DiffModeler Here DiffModeler can model protein complexes based on the domain templates you provide.
 
 This is based on <a href='https://www.ebi.ac.uk/Tools/sss/fasta/'>EBI Search Tool</a> aginst structure database to find most similar structures as templates for us to model protein complex. 
 <br><b>Please use our [server](https://em.kiharalab.org/algorithm/DiffModeler(seq)) if with more than 4 non-identical chains. </b> EBI's API is too slow to respond when you have many non-identical sequences.
@@ -234,7 +241,9 @@ After configuring the environment, please run
 ```commandline
 python3 main.py --mode=2 -F=[Map_Path] -P=[fasta_path] --config=[pipeline_config_file] --contour=[Contour_Level] --gpu=[GPU_ID] --resolution=[resolution]
 ```
-[Map_Path] is the path of the input experimental cryo-EM map, [fasta_path] specifis the path of sequence file with .fasta format. [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here.
+[Map_Path] is the path of the input experimental cryo-EM map, [fasta_path] specifis the path of sequence file with .fasta format. [pipeline_config_file] is the pipeline's parameter configuration file, saved in ``config`` directory; [Contour_Level] is the map density threshold to remove outside regions to save processing time (suggested to use half author recommended contour level), [GPU_ID] specifies the gpu used for inference. [resolution] specified the map resolution, where 0-2A will skip the diffusion model. Therefore, you can use an approximate resolution value here. <br>
+
+If you want to use domain-based structure modeling, you can simply add the ``--domain`` option. The program will first call SWORD2 to split each single chain into different domains and then model structures using these domain structures. Alternatively, you can use [SWORD2_server](https://www.dsimb.inserm.fr/SWORD2/index.html) to explore different domain splitting choices and provide the domain structureS as single-chain structures to DiffModeler Here DiffModeler can model protein complexes based on the domain templates you provide.
 
 Example of fasta file
 ```
