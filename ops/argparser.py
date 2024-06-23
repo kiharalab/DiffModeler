@@ -36,3 +36,27 @@ def argparser():
         for key in opt:
             params[key]=opt[key]
     return params
+
+
+def argparser_train():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-F',type=str,required=True, help='training data path (stored in npz format)')#File path for decoy dir
+    parser.add_argument("--info_txt",type=str,required=True,help="txt file path which records map name used for training/valiation")
+    parser.add_argument("--config",type=str,default=None,help="specifying the config path")
+    parser.add_argument("--gpu",type=str,default=None,help="specify the gpu we will use")
+    parser.add_argument("--output",type=str,help="Output directory (including log/model)")
+    args = parser.parse_args()
+    # remove comments starting with '//'
+    json_str = ''
+    opt_path = args.config
+    params = vars(args)
+    if opt_path is not None:
+        with open(opt_path, 'r') as f:
+            for line in f:
+                line = line.split('//')[0] + '\n'
+                json_str += line
+        opt = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+        for key in opt:
+            params[key]=opt[key]
+    return params

@@ -65,6 +65,10 @@ class DDIM(Base_DDIM):
         return self.log_dict
 
     def calculate_loss(self):
+        """
+        This is quick loss calculation for validation, also simply sample a timestep to get the results
+        """
+        self.netG.eval()
         with torch.no_grad():
             l_pix,x_recon,x_target = self.netG(self.data)
             l_pix = l_pix.mean()
@@ -72,9 +76,13 @@ class DDIM(Base_DDIM):
         self.log_dict['loss'] = l_pix.item()
         iou_val = iou(x_recon.sigmoid()>=0.5,x_target>0.5).mean()
         self.log_dict['iou'] = iou_val.item()
+        self.netG.train()
         return self.log_dict
 
     def test(self, continous=False):
+        """
+        this is really inference step by step to get the final results like we deployed for DiffModeler
+        """
         self.netG.eval()
         with torch.no_grad():
             if isinstance(self.netG, nn.DataParallel):

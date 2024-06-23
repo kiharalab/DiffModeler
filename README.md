@@ -263,6 +263,61 @@ python3 main.py --mode=2 -F=example/6824.mrc -P=example/6824.fasta --config=conf
 
 </details>
 
+
+<details>
+<summary>Training diffusion model in DiffModeler</summary>
+
+### Training diffusion model in DiffModeler
+To help adapt the diffusion model in DiffModeler for other purposes, we also released the training script and instructions here.
+#### 1. Dataset Preparation
+The dataset should be prepared in a directory [data_path] (keep in mind that you will use later), where the directory organization should be organized as
+```
+-[EMD-ID1]
+  --input_1.npy
+  --output_1.npy
+  --input_2.npy
+  --output_2.npy
+  ...
+-[EMD-ID2]
+  --input_1.npy
+  --output_1.npy
+  --input_2.npy
+  --output_2.npy
+  ...
+...
+```
+Here each sub-directory is the training input/target pairs collected from different EM mpas. The ``input_[k].npy`` and ``output_[k].npy`` corresponds to ``k``th exampls's input and target. Their shape should be [K,W,H], K indicates the number of channels, W refers to the width of the box, H refers to the height of the box. <br>
+
+The map ids [EMD-ID] used for training and validation should be prepared in a txt file, with each line records one [EMD-ID]. This record txt file should be saved in [info_txt_path]  (keep in mind that you will use later). 
+
+#### 2. Training Your own model
+Depends on which channel of ``K`` channels you will use in the prepared file, you can specify them in [config/diffmodeler_train.json](config/diffmodeler_train.json).
+```
+"data": {
+        "input_channel": [0],
+        "output_channel":[0] //to support multi-channel training examples you have
+    },
+```
+This is a list configuration for both input and output, you can add many channels as you want. If you changed to more channels, please also update network configuration accordingly.
+```
+"unet": {
+            "in_channel": 3,
+            "out_channel": 1,
+            ...
+```
+After proper configuration, you can then train your model with the following scripts:
+```
+python3 train.py -F [data_path] --info_txt [info_txt_path] --config config/diffmodeler_train.json --gpu [gpu_id] --output [output_path]
+```
+[data_path] and [info_txt_path] is the path that you configured the training data path and records path. <br> 
+[gpu_id] specifies the GPU used for training diffusion model. <br>
+[output_path] is the path that you specified to save the training log and models.  <br>
+
+If you wanted to change other configurations for better training, you can modify optimizer, network architecture, learning rate etc. in the configuration json file: ``config/diffmodeler_train.json`` <br>
+
+</details>
+
+
 ## Example
 
 <details>

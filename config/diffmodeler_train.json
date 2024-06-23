@@ -1,0 +1,66 @@
+
+
+{
+    "phase": "train",
+    "data": {
+        "input_channel": [0],
+        "output_channel":[0] //to support multi-channel training examples you have
+    },
+    "model": {
+      "path": "best_model/diffusion_best.pth.tar",
+      "unet": {
+            "in_channel": 3,
+            "out_channel": 1,
+            "inner_channel": 32,
+            "norm_groups": 16,
+            "channel_multiplier": [
+                1,
+                2,
+                4,
+                8,
+                8 //waiting to be adjusted if box size adjusted to 32.
+            ],
+            "attn_res": [
+                8 //if not use, we can change to any number out of numbers in "channel_multiplier"
+            ],
+            "res_blocks": 2,
+            "dropout": 0.2
+        },
+      "diffusion": {
+            "box_size": 64,
+            "stride": 32, //to save time, for better performance, you can choose 16.
+            "channels": 1, //sample channel for denoising
+            "loss_type": "solo_dens", //did not impact since we already fixed in the released version
+            "conditional": true // unconditional generation or unconditional generation(super_resolution)
+        },
+      "beta_schedule": { // use munual beta_schedule for acceleration
+            "train": {
+                "n_timestep": 100,
+                "infer_clip":1
+            },
+            "val": {
+                 "n_timestep": 100,
+                "infer_clip":1
+            }
+        }
+    },
+    "train": {
+        "num_workers": 4,
+        "batch_size": 16, //please adjust it based on your GPU size, should not be smaller than 8. If GPU too small, consider gradient accumulation choice.
+        "epoch": 30,
+        "clip_grad": 1,
+        "rand_seed": 888,
+        "portion": 0.8,
+        "save_checkpoint_freq": 1,
+        "print_freq": 200,
+        "optimizer": {
+            "type": "adam",
+            "lr": 1e-4,
+            "min_lr": 1e-6
+        }
+    },
+    "resume": {
+        "flag": false,
+        "path": "" //specify this path and change flag to true to resume training
+    }
+}
