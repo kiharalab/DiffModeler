@@ -169,8 +169,15 @@ tmp3.pdb D E
 which indicates 5 single-chain structures are provided. tmp1.pdb is for identical chain A and B, tmp2.pdb is for chain C, tmp3.pdb is for identical chain D and chain E.
 To obtain such template/alphafold predicted single-chain structure, please consider two options:
 
-1. Please check <a href='https://alphafold.ebi.ac.uk/'>AlphaFold Database</a> for single-chain structure with UniProt ID.
-2. Please simpy search <a href='https://www.ebi.ac.uk/Tools/sss/fasta/'>EBI Search Tool</a> aginst structure database to find most similar structures as templates for us to model protein complex. Here you can get similar (or even identical) experimental single-chain structures or AlphaFold predicted structures.
+1. Please check <a href='https://alphafold.ebi.ac.uk/'>AlphaFold Database</a> for single-chain structure with UniProt ID. <br>
+2. Please simpy search <a href='https://www.ebi.ac.uk/Tools/sss/fasta/'>EBI Search Tool</a> aginst structure database to find most similar structures as templates for us to model protein complex. Here you can get similar (or even identical) experimental single-chain structures or AlphaFold predicted structures.<br>
+
+After running the script, the generated cif file will be kept under ``Predict_Result/[map_name]/DiffModeler.cif``. The fitting score of each single chain is saved in occupency field of the cif file. If you want to visualize the fitting score, you can simply run the following command in PyMol after loading the cif file
+```
+spectrum q, red_white_blue,  all, 0,1
+```
+Here blue indicates good fitting chains and red indicates chains may not fit well. <br>
+You can also specify ``--output`` as your output directory for your job.
 
 ### Example Command
 ```commandline
@@ -211,6 +218,13 @@ VVTFREENTIAFRHLFLLGYSDGSDDTFAAYTQEQLYQ
 ```
 For ID line, please only include the chain id without any other information. If multiple chains include the identical sequences, please use comma "," to split different chains.
 <br> In this example, we have 6 chains in total, with A,B,C,D share the identical sequences and E,F share another identical sequences.
+
+After running the script, the generated cif file will be kept under ``Predict_Result/[map_name]/DiffModeler.cif``. The fitting score of each single chain is saved in occupency field of the cif file. If you want to visualize the fitting score, you can simply run the following command in PyMol after loading the cif file
+```
+spectrum q, red_white_blue,  all, 0,1
+```
+Here blue indicates good fitting chains and red indicates chains may not fit well. <br>
+You can also specify ``--output`` as your output directory for your job.
 
 ### Example Command
 ```commandline
@@ -254,6 +268,13 @@ VVTFREENTIAFRHLFLLGYSDGSDDTFAAYTQEQLYQ
 ```
 For ID line, please only include the chain id without any other information. If multiple chains include the identical sequences, please use comma "," to split different chains.
 <br> In this example, we have 6 chains in total, with A,B,C,D share the identical sequences and E,F share another identical sequences.
+
+After running the script, the generated cif file will be kept under ``Predict_Result/[map_name]/DiffModeler.cif``. The fitting score of each single chain is saved in occupency field of the cif file. If you want to visualize the fitting score, you can simply run the following command in PyMol after loading the cif file
+```
+spectrum q, red_white_blue,  all, 0,1
+```
+Here blue indicates good fitting chains and red indicates chains may not fit well. <br>
+You can also specify ``--output`` as your output directory for your job.
 
 
 ### Example Command
