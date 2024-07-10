@@ -2,7 +2,7 @@
 import os
 from ops.io_utils import write_pickle,load_pickle
 from modeling.score_utils import build_score_pool,filter_score_dict,add_structure_size_score
-from modeling.pdb_utils import collect_final_pdb,swap_cif_occupancy_bfactor
+from modeling.pdb_utils import collect_final_pdb
 from ops.pdb_utils import cif2pdb
 from modeling.iterative_fitting import iterative_fitting
 from ops.os_operation import mkdir
@@ -63,8 +63,5 @@ def  assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,par
         print("The domain based chain name cif is saved at %s"%final_path)
         final_path = final_new_path 
 
-    #generate a cif file to save the fitting score to b-factor field for easier visualization
-    #for server visualization on server
-    score_specific_path = os.path.join(modeling_dir,"Final_fitscore.cif")
-    swap_cif_occupancy_bfactor(final_path,score_specific_path)
+    
     return final_path
