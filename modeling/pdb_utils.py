@@ -269,3 +269,22 @@ def collect_domain_pdb(modeling_dir,chain_visit_dict):
             first_structure=False
 
     return final_pdb_path
+
+
+def swap_cif_occupancy_bfactor(input_cif_path, output_cif_path):
+    """
+    input_cif_path: str
+        Path to the input CIF file.
+    output_cif_path: str
+        Path to the output CIF file.
+
+    """
+    with open(input_cif_path,'r') as rfile:
+        with open(output_cif_path,'w') as wfile:
+            for line in rfile:
+                if line.startswith("_atom_site.occupancy"):
+                    #_atom_site.B_iso_or_equiv
+                    line = line.replace("occupancy","B_iso_or_equiv")
+                elif line.startswith("_atom_site.B_iso_or_equiv"):
+                    line = line.replace("B_iso_or_equiv","occupancy")
+                wfile.write(line)

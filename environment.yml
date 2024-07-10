@@ -26,3 +26,4 @@ dependencies:
       - plotly
       - prody
       - kaleido
+      - pandas
