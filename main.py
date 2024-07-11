@@ -167,7 +167,7 @@ if __name__ == "__main__":
     #generate a cif file to save the fitting score to b-factor field for easier visualization
     #for server visualization on server
     from modeling.pdb_utils import swap_cif_occupancy_bfactor
-    score_specific_path = os.path.join(modeling_dir,"DiffModeler_fitscore.cif")
+    score_specific_path = os.path.join(save_path,"DiffModeler_fitscore.cif")
     swap_cif_occupancy_bfactor(output_cif,score_specific_path)
 
     print(f"Please check DiffModeler's output structure in {output_cif}")
