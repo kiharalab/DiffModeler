@@ -3,6 +3,18 @@ from ops.os_operation import mkdir,functToDeleteItems
 from ops.io_utils import download_file
 from ops.pdb_utils import count_atom_line,filter_chain_cif,cif2pdb,filter_chain_pdb,count_residues
 from ops.fasta_searchdb import download_pdb
+
+def parse_template_info(input_file):
+    candidate_list=[]
+    with open(input_file,'r') as rfile:
+        for kk in range(10):
+            line=rfile.readline()
+            line = line.strip("\n")
+            split_info = line.split(":")
+            database = split_info[0]
+            pdb_id = split_info[1]
+            candidate_list.append([database,pdb_id])
+    return candidate_list
 def fasta2pool(params,save_path):
     max_file_name_limit=250#default is 255, to be safe
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
@@ -60,20 +72,20 @@ def fasta2pool(params,save_path):
                                       params['email'],input_fasta_path)
             run_command(command_line)
         cur_file = os.path.join(current_chain_dir,listfiles[0])
-        candidate_list=[]
-        with open(cur_file,'r') as rfile:
-            for kk in range(10):
-                line=rfile.readline()
-                line = line.strip("\n")
-                split_info = line.split(":")
-                database = split_info[0]
-                pdb_id = split_info[1]
-                candidate_list.append([database,pdb_id])
+        candidate_list = parse_template_info(cur_file)
+        listfiles_acc = [x for x in os.listdir(current_chain_dir) if ".accs.txt" in x]
+        if len(listfiles_acc)==0:
+            print("fail to find search results for chain %s *.accs.txt from EBI-Search!"%chain_name_list)
+            exit()
+        cur_acc_file = os.path.join(current_chain_dir,listfiles_acc[0])
+        pdb_candidate_list = parse_template_info(cur_acc_file)
+        
         find_flag=False
-        for candidate in candidate_list:
+        for candidate_index,candidate in enumerate(candidate_list):
             database,pdb_id=candidate
             if database=="PDB":
-                download_pdb(pdb_id,current_chain_dir,final_pdb_path)
+                _,pdb_candidate = pdb_candidate_list[candidate_index]
+                download_pdb(pdb_candidate,current_chain_dir,final_pdb_path)
 
             else:
                 #alphafold db
