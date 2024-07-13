@@ -83,9 +83,12 @@ def fasta2pool(params,save_path):
         find_flag=False
         for candidate_index,candidate in enumerate(candidate_list):
             database,pdb_id=candidate
+            print("candidate %s: %s"%(database,pdb_id))
+            tmp_cur_chain_dir = os.path.join(current_chain_dir,str(candidate_index))
+            mkdir(tmp_cur_chain_dir)
             if database=="PDB":
                 _,pdb_candidate = pdb_candidate_list[candidate_index]
-                download_pdb(pdb_candidate,current_chain_dir,final_pdb_path)
+                download_pdb(pdb_candidate,tmp_cur_chain_dir,final_pdb_path)
 
             else:
                 #alphafold db
@@ -98,7 +101,7 @@ def fasta2pool(params,save_path):
                 find_flag=True
                 break
             else:
-                functToDeleteItems(current_chain_dir)
+                functToDeleteItems(tmp_cur_chain_dir)
                 os.remove(final_pdb_path)
         if find_flag is False:
             database,pdb_id=candidate_list[0]
