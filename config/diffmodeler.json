@@ -76,6 +76,7 @@
         "overlap_ratio_limit": 0.05
     },
     "search": {
-      "length_ratio": 0.9
+      "length_ratio": 0.9,
+      "max_length_ratio": 1.1
     }
 }

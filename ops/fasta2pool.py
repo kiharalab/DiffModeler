@@ -96,16 +96,19 @@ def fasta2pool(params,save_path):
                 download_file(download_link,final_pdb_path)
             expected_seq_length = len(chain_dict[chain_name_list.replace("-",",")])*params['search']['length_ratio']
             actual_structure_length = count_residues(final_pdb_path)
+            max_allow_length = len(chain_dict[chain_name_list.replace("-",",")])*params['search']['max_length_ratio']
             if actual_structure_length>=expected_seq_length and \
-                    actual_structure_length<=len(chain_dict[chain_name_list.replace("-",",")]):
+                    actual_structure_length<=max_allow_length:
                 find_flag=True
                 break
             else:
+                print("structure length %d is not in the range of %d and %d"%(actual_structure_length,expected_seq_length,max_allow_length))
                 functToDeleteItems(tmp_cur_chain_dir)
                 os.remove(final_pdb_path)
         if find_flag is False:
             database,pdb_id=candidate_list[0]
-            download_pdb(pdb_id,current_chain_dir,final_pdb_path)
+            _,pdb_candidate = pdb_candidate_list[0]
+            download_pdb(pdb_candidate,current_chain_dir,final_pdb_path)
         final_chain_list = chain_name_list.split("-")
         fitting_dict[final_pdb_path]=final_chain_list
     print("collecting finish: fitting dict: ",fitting_dict)
