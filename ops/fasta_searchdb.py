@@ -139,13 +139,14 @@ def fasta_searchdb(params, save_path):
             if evalue == 0:
                 # fetch the pdb to see if the protein size really reasonable
                 expected_seq_length = len(chain_dict[key]) * params['search']['length_ratio']
+                max_allow_length = len(chain_dict[key]) * params['search']['max_length_ratio']
                 chain_name_list = key.replace(",", "-")
                 current_chain_dir = os.path.join(single_chain_pdb_dir, str(chain_name_list)[:max_file_name_limit])
                 mkdir(current_chain_dir)
                 final_pdb_path = os.path.join(single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb")
                 download_pdb(match_id, current_chain_dir, final_pdb_path)
                 actual_structure_length = count_residues(final_pdb_path)
-                if actual_structure_length >= expected_seq_length and actual_structure_length <= len(chain_dict[key]):
+                if actual_structure_length >= expected_seq_length and actual_structure_length <= max_allow_length:
                     matched_dict[key] = "PDB:" + match_id
                     final_chain_list = chain_name_list.split("-")
                     fitting_dict[final_pdb_path] = final_chain_list
@@ -186,6 +187,7 @@ def fasta_searchdb(params, save_path):
             mkdir(current_chain_dir)
             final_pdb_path = os.path.join(single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb")
             expected_seq_length = len(chain_dict[key]) * params['search']['length_ratio']
+            max_allow_length = len(chain_dict[key]) * params['search']['max_length_ratio']
             for k in range(len(current_match_list)):
                 match_id, evalue = current_match_list[k]
                 if params['af_only']:
@@ -224,7 +226,7 @@ def fasta_searchdb(params, save_path):
 
                 curr_seq_length_diff = abs(expected_seq_length - actual_structure_length)
 
-                if expected_seq_length <= actual_structure_length <= len(chain_dict[key]):
+                if expected_seq_length <= actual_structure_length <= max_allow_length:
                     if "AFDB" in match_id:
                         matched_dict[key] = match_id
                     else:

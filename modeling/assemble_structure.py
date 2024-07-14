@@ -62,4 +62,6 @@ def  assemble_structure(diff_trace_map,fitting_dict,fitting_dir,modeling_dir,par
             pass
         print("The domain based chain name cif is saved at %s"%final_path)
         final_path = final_new_path 
+
+    
     return final_path
