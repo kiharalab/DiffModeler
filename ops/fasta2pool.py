@@ -107,7 +107,10 @@ def fasta2pool(params,save_path):
                 os.remove(final_pdb_path)
         if find_flag is False:
             database,pdb_id=candidate_list[0]
-            _,pdb_candidate = pdb_candidate_list[0]
+            if database=="PDB":
+                _,pdb_candidate = pdb_candidate_list[0]
+            else:
+                pdb_candidate = pdb_id
             download_pdb(pdb_candidate,current_chain_dir,final_pdb_path)
         final_chain_list = chain_name_list.split("-")
         fitting_dict[final_pdb_path]=final_chain_list
