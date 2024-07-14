@@ -109,9 +109,11 @@ def fasta2pool(params,save_path):
             database,pdb_id=candidate_list[0]
             if database=="PDB":
                 _,pdb_candidate = pdb_candidate_list[0]
+                download_pdb(pdb_candidate,current_chain_dir,final_pdb_path)
             else:
                 pdb_candidate = pdb_id
-            download_pdb(pdb_candidate,current_chain_dir,final_pdb_path)
+                download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb"%pdb_id
+                download_file(download_link,final_pdb_path)
         final_chain_list = chain_name_list.split("-")
         fitting_dict[final_pdb_path]=final_chain_list
     print("collecting finish: fitting dict: ",fitting_dict)
