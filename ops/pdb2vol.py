@@ -183,10 +183,10 @@ def mapGridPosition(origin, voxel_size, box_size, atom_coord):
     y_pos = (atom_coord[1] - origin[1]) / voxel_size[1]
     z_pos = (atom_coord[2] - origin[2]) / voxel_size[2]
 
-    if (box_size[2] > x_pos >= 0) and (box_size[1] > y_pos >= 0) and (box_size[0] > z_pos >= 0):
+    if (box_size[2] > x_pos + 1 >= 0) and (box_size[1] > y_pos + 1 >= 0) and (box_size[0] > z_pos + 1 >= 0):
         return x_pos, y_pos, z_pos
     else:
-        return 0, 0, 0
+        return 0.0, 0.0, 0.0
 
 
 @njit(fastmath=True, nogil=True)
@@ -207,7 +207,7 @@ def make_atom_overlay_map(origin, voxel_size, box_size, atom_list, atom_type_lis
     map_data = np.zeros(box_size)
     for atom, atom_type in zip(atom_list, atom_type_list):
         pos = mapGridPosition(origin, voxel_size, box_size, atom)
-        if pos:
+        if not (pos[0] == pos[1] == pos[2] == 0.0):
             atom_mass = atom_mass_dict.get(atom_type, 0.0)
             pos_x_0 = int(np.floor(pos[0]))
             pos_y_0 = int(np.floor(pos[1]))
