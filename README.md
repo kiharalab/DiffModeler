@@ -20,7 +20,7 @@ For technical problems or questions, please reach to Xiao Wang (wang3702@purdue.
 
 ## Citation:
 
-Xiao Wang, Han Zhu, Genki Terashi & Daisuke Kihara. Protein Complex Structure Modeling with Diffusion Model and AlphaFold in cryo-EM maps.bioArxiv, 2023.<br>
+Xiao Wang, Han Zhu, Genki Terashi & Daisuke Kihara. DiffModeler: Large Macromolecular Structure Modeling for Cryo-EM Maps Using Diffusion Model. Nature Methods, accepted 2024.<br>
 Early Version available at [bioRxiv](https://www.biorxiv.org/content/10.1101/2024.01.20.576370v2)
 ```
 @article{wang2023DiffModeler,   
