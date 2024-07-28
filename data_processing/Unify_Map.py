@@ -13,6 +13,7 @@ def Unify_Map(input_map_path, new_map_path):
     nstart = np.asarray([mrc.header.nxstart, mrc.header.nystart, mrc.header.nzstart], dtype=np.float32)
     cella = np.array(mrc.header.cella.tolist(), dtype=np.float32)
     mapcrs = np.asarray([mrc.header.mapc, mrc.header.mapr, mrc.header.maps], dtype=int)
+    msample = np.asarray([mrc.header.mx, mrc.header.my, mrc.header.mz], dtype=int)
     # if np.sum(nstart) == 0:
     #     return input_map_path
     mrc.print_header()
@@ -26,13 +27,14 @@ def Unify_Map(input_map_path, new_map_path):
     data = np.transpose(data, axes=2 - sort[::-1])
 
     # Move offsets from nstart to origin if origin is zero (MRC2000)
-    if np.sum(origin) == 0:
+    if np.all(origin == 0):
         origin = origin + nstart * voxel_size
 
     # Save the unified map
     mrc_new = mrcfile.new(new_map_path, data=data, overwrite=True)
     (mrc_new.header.origin.x, mrc_new.header.origin.y, mrc_new.header.origin.z) = origin
     (mrc_new.header.cella.x, mrc_new.header.cella.y, mrc_new.header.cella.z) = cella
+    (mrc_new.header.mx, mrc_new.header.my, mrc_new.header.mz) = msample
     mrc_new.update_header_stats()
     mrc_new.print_header()
     mrc_new.close()
