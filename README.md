@@ -339,6 +339,29 @@ If you wanted to change other configurations for better training, you can modify
 </details>
 
 
+<details>
+<summary>Evaluate modeled structure by DiffModeler</summary>
+
+#### 1. Convert .cif to .pdb
+First convert .cif format to .pdb format via maxit: [install maxit](https://sw-tools.rcsb.org/apps/MAXIT/index.html)<br>
+Then run the following command to convert DiffModeler.cif to  DiffModeler.pdb:
+```
+maxit -input DiffModeler.cif -output DiffModeler.pdb -o 2
+```
+For big structure that with more than 9999 residues, please reindex residue id from 1 for each chain. Otherwise, the conversion may lead to incorrect evaluation results.
+
+#### 2. Evaluation by MMalign
+You can choose to install MMAlign or run it online: [MMalign](https://zhanggroup.org/MM-align/). <br>
+Then run the following command to compare DiffModeler.pdb with native.pdb.
+```
+./MMalign  DiffModeler.pdb native.pdb >report.txt
+```
+The evaluation metrics are available in report.txt.<br>
+The TM-score is the 2nd one, which is normalized by the 2nd structure(native.pdb). <br>
+The Align Ratio is calculated by dividing the reported align length by the length of the native structure. <br>
+The sequence identity is calculated by Seq_ID*Align-Ratio.
+</details>
+
 ## Example
 
 <details>
