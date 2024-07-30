@@ -18,6 +18,13 @@ Contact: Daisuke Kihara (dkihara@purdue.edu)
 
 For technical problems or questions, please reach to Xiao Wang (wang3702@purdue.edu).
 
+## Notice
+The newer version of Intel MKL will cause pyTorch to give the following error due to a symbol being removed: ImportError undefined symbol: `iJIT_NotifyEvent` is encountered.
+
+We have updated the environment.yml and requirements.txt to fix the version to an older version. Any previous installation should work just fine.
+
+If you have ever encountered this issue, please activate the conda env first and run `conda install mkl==2024.0`.
+
 ## Citation:
 
 Xiao Wang, Han Zhu, Genki Terashi & Daisuke Kihara. DiffModeler: Large Macromolecular Structure Modeling for Cryo-EM Maps Using Diffusion Model. Nature Methods, accepted 2024.<br>
