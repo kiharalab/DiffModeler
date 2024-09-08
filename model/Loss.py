@@ -48,7 +48,7 @@ class BatchDiceLoss(nn.Module):
         #if self.weight is None:
         self.weight = [1 for k in range(input_soft.shape[1])]
         assert input_soft.shape[1]==len(self.weight)
-        dims = [k for k in range(1,len(input.shape))]
+        dims = [k for k in range(1,len(input.shape)-1)]
         loss = 0
         for j in range(len(self.weight)):
             intersection = torch.sum(input_soft[:,j] * target[:,j], dims)
