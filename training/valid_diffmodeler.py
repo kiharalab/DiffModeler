@@ -21,7 +21,7 @@ def valid_diffmodeler(valid_loader,ddim_runner,model,
             ddim_runner.feed_data(data)
             avg_meters['data_time'].update(time.time()-end_time,batch_size )
             loss = ddim_runner.calculate_loss()
-            avg_meters['loss'].update(loss.item(), batch_size)
+            avg_meters['loss'].update(loss['loss'].item(), batch_size)
             avg_meters['train_time'].update(time.time()-end_time,batch_size )
             end_time = time.time()
             progress.display(batch_idx)
