@@ -49,9 +49,22 @@ def prepare_domain_input(fitting_dict,save_dir,num_cpu=8):
             print(f"Error: SWORD2 failed to split {pdb_path}")
             continue
         cur_output_json = os.path.join(cur_output_dir,"SWORD2_summary.json")
-        domain_info = load_json(cur_output_json)
-        boundary_info = domain_info['Optimal partition']['BOUNDARIES']
-        print(f"Domain info for {pdb_path}: {boundary_info}")
+        if not os.path.exists(cur_output_json):
+            print(f"Error: SWORD2 failed to split {pdb_path}")
+            domain_pdb_path = os.path.join(save_dir,f"{pdb_name}.pdb")
+            shutil.copy(pdb_path,domain_pdb_path)
+            domain_fitting_dict[domain_pdb_path]=chain_ids
+            continue
+        try:
+            domain_info = load_json(cur_output_json)
+            boundary_info = domain_info['Optimal partition']['BOUNDARIES']
+            print(f"Domain info for {pdb_path}: {boundary_info}")
+        except:
+            print(f"Error: SWORD2 failed to split {pdb_path}")
+            domain_pdb_path = os.path.join(save_dir,f"{pdb_name}.pdb")
+            shutil.copy(pdb_path,domain_pdb_path)
+            domain_fitting_dict[domain_pdb_path]=chain_ids
+            continue
         for domain_name in boundary_info:
             current_domain = boundary_info[domain_name]
             #filter all residues
