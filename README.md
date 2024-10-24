@@ -18,20 +18,14 @@ Contact: Daisuke Kihara (dkihara@purdue.edu)
 
 For technical problems or questions, please reach to Xiao Wang (wang3702@purdue.edu).
 
-## Notice
-The newer version of Intel MKL will cause pyTorch to give the following error due to a symbol being removed: ImportError undefined symbol: `iJIT_NotifyEvent` is encountered.
 
-We have updated the environment.yml and requirements.txt to fix the version to an older version. Any previous installation should work just fine.
-
-If you have ever encountered this issue, please activate the conda env first and run `conda install mkl==2024.0`.
 
 ## Citation:
 
-Xiao Wang, Han Zhu, Genki Terashi & Daisuke Kihara. DiffModeler: Large Macromolecular Structure Modeling for Cryo-EM Maps Using Diffusion Model. Nature Methods, accepted 2024.<br>
-Early Version available at [bioRxiv](https://www.biorxiv.org/content/10.1101/2024.01.20.576370v2)
+Xiao Wang, Han Zhu, Genki Terashi, Manav Taluja, & Daisuke Kihara. DiffModeler: large macromolecular structure modeling for cryo-EM maps using a diffusion model. Nature Methods, 2024. [Paper](https://www.nature.com/articles/s41592-024-02479-0) <br>
 ```
-@article{wang2023DiffModeler,   
-  title={DiffModeler: Large Macromolecular Structure Modeling for Cryo-EM Maps Using Diffusion Model},   
+@article{wang2024diffmodeler,   
+  title={DiffModeler: Large Macromolecular Structure Modeling for Cryo-EM Maps Using a Diffusion Model},   
   author={Xiao Wang, Han Zhu, Genki Terashi, Manav Taluja, and Daisuke Kihara},    
   journal={Nature Methods},    
   year={2024}    
@@ -379,6 +373,14 @@ The sequence identity is calculated by Seq_ID*Align-Ratio.
 Cryo-EM map with mrc format. 
 AlphaFold/Template single-chain structure and information file to indicate the path.
 Our example input can be found [here](https://github.com/kiharalab/DiffModeler/tree/master/example)
+
+
+## Notice
+The newer version of Intel MKL will cause pyTorch to give the following error due to a symbol being removed: ImportError undefined symbol: `iJIT_NotifyEvent` is encountered.
+
+We have updated the environment.yml and requirements.txt to fix the version to an older version. Any previous installation should work just fine.
+
+If you have ever encountered this issue, please activate the conda env first and run `conda install mkl==2024.0`.
 
 ### Output File 
 DiffModeler.cif: a CIF file that records the final modeled protein complex structure.
