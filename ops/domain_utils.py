@@ -73,8 +73,9 @@ def prepare_domain_input(fitting_dict,save_dir,num_cpu=8):
                 residue_index_list+=list(range(tmp_range[0],tmp_range[1]+1))
             #output the domain pdb
             #    
-            domain_pdb_path = os.path.join(save_dir,f"{pdb_name}_{domain_name}.pdb")
-            filter_pdb_by_residues(pdb_path,domain_pdb_path,residue_index_list)
+            pdb_path_renumed = os.path.join(cur_output_dir, f"{pdb_name}_A")
+            domain_pdb_path = os.path.join(save_dir, f"{pdb_name}_{domain_name}.pdb")
+            filter_pdb_by_residues(pdb_path_renumed, domain_pdb_path, residue_index_list)
             current_chain_ids = [x+"_"+str(domain_name) for x in chain_ids]
             domain_fitting_dict[domain_pdb_path]=current_chain_ids
             print(f"Domain {domain_name} for {pdb_path} is saved at {domain_pdb_path}")
