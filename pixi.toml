@@ -1,5 +1,5 @@
 [project]
-authors = ["Xiao Wang <wang3702@purdue.edu>", "Han Zhu <zhu773@purdue.edu>"]
+authors = ["Xiao Wang <wang3702@purdue.edu>", "Han Zhu <zhu773@purdue.edu>", "Genki Terashi <terashi@purdue.edu>", "Manav Taluja <taluja@purdue.edu>", "Daisuke Kihara <dkihara@purdue.edu>"]
 channels = ["nvidia/label/cuda-11.8.0", "nvidia", "conda-forge", "pytorch"]
 description = "DiffModeler is a computational tool using a diffusion model to automatically build full protein complex structure from cryo-EM maps at 0-20A resolution."
 name = "diffmodeler"
