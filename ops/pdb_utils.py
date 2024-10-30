@@ -545,8 +545,11 @@ def clean_pdb_template(fitting_dict,final_template_dir):
                             resn = line[17:20]
                             #wfile.write(line[:21]+"A"+line[22:])
                             #reclean bfactor field, if larger than 100, set to 100, if between 0 to 1, set to x*100
-                            bfactor = float(line[60:66])
-                            if bfactor<1:
+                            try:
+                                bfactor = float(line[60:66])
+                            except:
+                                bfactor = 100
+                            if bfactor<=1:
                                 bfactor*=100
                             if bfactor==0:#no information recorded in bfactor field
                                 bfactor=100
