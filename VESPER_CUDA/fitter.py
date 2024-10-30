@@ -519,8 +519,9 @@ class MapFitter:
             result["Nm"] = Nm
             result["total"] = total
 
+
     @staticmethod
-    def _calc_ldp_recall_score_item(ldp_arr, ca_arr, rot_mtx, trans):
+    def _calc_ldp_recall_score_item(ldp_tree, ca_arr, rot_mtx, trans):
         """
         Calculate the recall score of LDP points given a rotation matrix and translation vector
         All arguments have to be torch tensors on GPU
@@ -529,22 +530,22 @@ class MapFitter:
         # rot_mtx: torch tensor of shape (3, 3)
         # trans: torch tensor of shape (3, )
         """
-        import torch
+        # import torch
+        #
+        # # rotated backbone CA
+        # rot_backbone_ca = torch.matmul(ca_arr, rot_mtx) + trans
+        rot_backbone_ca = np.dot(ca_arr, rot_mtx) + trans
+        distances, indices = ldp_tree.query(rot_backbone_ca, k=1)
+        coverage = np.sum(distances < 3.0) / len(rot_backbone_ca)
+        return coverage
 
-        # rotated backbone CA
-        rot_backbone_ca = torch.matmul(ca_arr, rot_mtx) + trans
-
-        # calculate all pairwise distances
-        dist_mtx = torch.cdist(rot_backbone_ca, ldp_arr, p=2)
-
-        # get distance from the closest LDP point for each CA atom
-        min_dist = torch.min(dist_mtx, dim=1).values
-
-        # count the coverage of CA atoms within 3.0 angstrom of LDP points in the total amount of CA atoms
-        return (min_dist < 3.0).sum().item() / len(rot_backbone_ca)
 
     def _calc_ldp_recall(self, results, sort=False, progress_bar=True):
         import torch
+        from scipy.spatial import KDTree
+        ldp_atoms = self.ldp_atoms.cpu().numpy()
+        ldp_tree = KDTree(ldp_atoms)
+        bb_ca = self.backbone_ca.cpu().numpy()
 
         if not progress_bar:
             iter_results = results  # calculate for each rotation
@@ -553,10 +554,8 @@ class MapFitter:
         for result in iter_results:
             r = R.from_euler("xyz", result["angle"], degrees=True)
             rot_mtx = (r.as_matrix()).T
-            rot_mtx = torch.from_numpy(rot_mtx).to(self.device)
-            # rot_mtx = euler_to_mtx(torch.tensor(result["angle"], device=self.device)).t()
             result["ldp_recall"] = self._calc_ldp_recall_score_item(
-                self.ldp_atoms, self.backbone_ca, rot_mtx, torch.from_numpy(result["real_trans"]).to(self.device)
+                ldp_tree, bb_ca, rot_mtx, result["real_trans"]
             )
 
         # sort by LDP recall

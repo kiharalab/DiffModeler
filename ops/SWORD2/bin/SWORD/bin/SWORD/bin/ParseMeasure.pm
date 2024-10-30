@@ -1,6 +1,7 @@
 
 use strict;
-use lib "/home/www/gelly/SWORD/bin/ComputeJones/";
+use FindBin;
+use lib "$FindBin::Bin/bin/ComputeJones";
 use DistanceModel;
 
 sub ParseMeasure {
@@ -94,7 +95,7 @@ sub ParseMeasure {
                                         $delineation2 =~ s/;/\\;/g;
 
                                         my $temp =
-`/home/www/www-tools/sword/bin/SWORD/bin/ComputeJones/ComputeJones.pl $pdb$delineation1 $pdb$delineation2 $dir_data`;
+`$FindBin::Bin/bin/ComputeJones/ComputeJones.pl $pdb$delineation1 $pdb$delineation2 $dir_data`;
 
                                         if ( substr( $temp, 0, 1 ) == 1 ) {
                                             @temp_measure = (

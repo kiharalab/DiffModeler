@@ -73,34 +73,52 @@ validated its generalizability with plausible performances.
 
 <details>
 
-
-
 ### System Requirements
-CPU: >=4 cores <br>
-Memory (RAM): >=12Gb. <br>
-GPU: any GPU supports CUDA with at least 12GB memory. <br>
-GPU is required for DiffModeler since most computations are done on GPU.
+- **CPU**: 4 cores or higher
+- **Memory**: 12GB RAM or higher
+- **GPU**: CUDA-compatible with minimum 12GB memory
+- **Note**: GPU is mandatory as DiffModeler performs most computations on GPU
 
 ## Installation  
 ### 1. [`Install git`](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) 
 ### 2. Clone the repository in your computer 
-```
+```bash
 git clone git@github.com:kiharalab/DiffModeler.git && cd DiffModeler
 ```
 
 ### 3. Configure environment for DiffModeler.
-#### 3.1.1 Install anaconda
+### **Option A: Conda Environment**
+##### 3.A.1 Install anaconda
 Install anaconda from https://www.anaconda.com/download#downloads.
-#### 3.1.2 Install environment via yml file
-Then create the environment via
-```commandline
+##### 3.A.2 Install environment via yml file
+```bash
 conda env create -f environment.yml
 ```
-#### 3.1.3 Activate environment for running
+##### 3.A.3 Activate environment for running
 Each time when you want to run this software, simply activate the environment by
-```
+```bash
 conda activate DiffModeler
-conda deactivate(If you want to exit) 
+# To exit
+conda deactivate
+```
+#### **Option B: Pixi Environment**
+
+#### 3.B.1 Install pixi
+```bash
+curl -fsSL https://pixi.sh/install.sh | bash
+```
+
+##### 3.B.2 Install environment via toml file
+```bash
+pixi install
+```
+
+##### 3.B.3 Activate environment for running
+Each time when you want to run this software, simply activate the environment by
+```bash
+pixi shell
+# To exit
+exit
 ```
 
 ### 4. Download the pre-trained diffusion model

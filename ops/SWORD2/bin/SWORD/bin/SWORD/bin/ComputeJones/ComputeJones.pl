@@ -9,11 +9,8 @@
 ###########################################################
 
 use strict;
-use lib '/home/www/gelly/SWORD/bin/ComputeJones/';
-
-#my $home        		="/home/jasmin/chebrek/Desktop/Protein_Unit";
-#my $prog_parsing 		="$home/2_Domain_Reconstruction/bin/03_Parsing_PDBs/Parsing_PDBs_WithGaps.pl";
-#my $prog_correspondance ="$home/2_Domain_Reconstruction/bin/07_Auto_Domaine/Correspondance_Indexation.pl";
+use File::Basename;
+use lib dirname (__FILE__);
 
 my $delineation1	= 	shift;
 my $delineation2	= 	shift;
