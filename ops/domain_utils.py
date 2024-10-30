@@ -12,7 +12,7 @@ def prepare_domain_input(fitting_dict, save_dir, num_cpu=8):
     """
     :param fitting_dict:    [pdb_path]:[list of chain_id]
     :param save_dir:
-    return: 
+    return:
     fitting_dict
     """
     domain_fitting_dict_path = os.path.join(save_dir, "domain_fitting_dict.pkl")
@@ -36,17 +36,35 @@ def prepare_domain_input(fitting_dict, save_dir, num_cpu=8):
     os.makedirs(save_dir, exist_ok=True)
     domain_fitting_dict = {}
 
+    # clean the binaries
+    dssp_bin = os.path.join(current_dir, "bin/SWORD/bin/SWORD/bin/Dssp/dsspcmbi")
+    peeling_bin = os.path.join(current_dir, "bin/SWORD/bin/SWORD/bin/Peeling_omp")
+    scoring_bin = os.path.join(current_dir, "bin/mypmfs-master/scoring_omp")
+    if os.path.exists(dssp_bin):
+        os.remove(dssp_bin)
+    if os.path.exists(peeling_bin):
+        os.remove(peeling_bin)
+    if os.path.exists(scoring_bin):
+        os.remove(scoring_bin)
+
+    # compile the SWORD2 C++ binaries
+    os.environ["MKL_ENABLE_INSTRUCTIONS"] = "SSE4_2"
+    os.system(f"{os.path.join(current_dir, 'bin/SWORD/bin/SWORD/SWORD')} > /dev/null")
+    os.system(f"make -C {os.path.join(current_dir, 'bin/mypmfs-master/')} scoring_omp > /dev/null")
+    os.system(f"make -C {os.path.join(current_dir, 'bin/SWORD/bin/SWORD/bin')} Peeling_omp > /dev/null")
+
     for pdb_path in fitting_dict:
         chain_ids = fitting_dict[pdb_path]
         pdb_name = os.path.basename(pdb_path).replace(".pdb", "")
         pdb_dir = os.path.join(save_dir, pdb_name)
         os.makedirs(pdb_dir, exist_ok=True)
+        print("Launching SWORD2 for %s" % pdb_path)
         if num_cpu > 0:
             # split pdb into different domains
-            command_line = f"python3 {sword_script_path} -i {pdb_path} -o {pdb_dir} -c A --cpu {num_cpu} --disable-energies --disable-plots"
+            command_line = f"python {sword_script_path} -i {pdb_path} -o {pdb_dir} -c A --cpu {num_cpu} --disable-energies --disable-plots"
         else:
             # 0 indicates use all cpu available
-            command_line = f"python3 {sword_script_path} -i {pdb_path} -o {pdb_dir} -c A --disable-energies --disable-plots"
+            command_line = f"python {sword_script_path} -i {pdb_path} -o {pdb_dir} -c A --disable-energies --disable-plots"
         os.system(command_line)
         cur_output_dir = os.path.join(pdb_dir, f"{pdb_name}_A")
         if not os.path.exists(cur_output_dir):
@@ -61,7 +79,7 @@ def prepare_domain_input(fitting_dict, save_dir, num_cpu=8):
             continue
         try:
             domain_info = load_json(cur_output_json)
-            boundary_info = domain_info['Optimal partition']['Domains']
+            boundary_info = domain_info["Optimal partition"]["Domains"]
             print(f"Domain info for {pdb_path}: {boundary_info}")
         except:
             print(f"Error: SWORD2 failed to split {pdb_path}, boundary info missing")
@@ -76,11 +94,10 @@ def prepare_domain_input(fitting_dict, save_dir, num_cpu=8):
             dom = current_domain.get("PUs", {})
             for tmp_range in dom:
                 res_range = tmp_range.split("-")
-                residue_index_list.append((int(res_range[0]), int(res_range[1]) + 1))
-                # residue_index_list+=list(range(tmp_range[0],tmp_range[1]+1))
-            print("Domain name:", domain_name, "Residue ranges:", residue_index_list)
+                residue_index_list.extend(list(range(int(res_range[0]), int(res_range[1]) + 1)))
+            print("Domain name:", domain_name, "Residue indices:", residue_index_list)
             # output the domain pdb
-            #    
+            #
             pdb_path_renumed = os.path.join(cur_output_dir, f"{pdb_name}_A")
             print("Renumbered PDB path:", pdb_path_renumed)
             domain_pdb_path = os.path.join(save_dir, f"{pdb_name}_{domain_name}.pdb")
