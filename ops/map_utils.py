@@ -291,17 +291,17 @@ def SimuMap1A_pdb2vol(input_path,save_path):
     command_line='cat '+tmp_file_name+" | "+'pdb2vol ' + input_path + " " +gen_map_name
     os.system(command_line)
     return gen_map_name
-from TEMPy import *
-from TEMPy.protein.structure_parser import *
-from TEMPy.protein.structure_blurrer import *
-from TEMPy.protein.scoring_functions import *
-from TEMPy.maps.map_parser import *
-def SimuMap1A(input_path,save_path):
-    #tempy based simulated map generation to save time
-    sb = StructureBlurrer()
-    pdb1 = PDBParser.read_PDB_file('PDB1',input_path)
-    sim_map = sb.gaussian_blur_real_space(prot=pdb1,resolution=1)
-    sim_map.write_to_MRC_file(save_path)
+# from TEMPy import *
+# from TEMPy.protein.structure_parser import *
+# from TEMPy.protein.structure_blurrer import *
+# from TEMPy.protein.scoring_functions import *
+# from TEMPy.maps.map_parser import *
+# def SimuMap1A(input_path,save_path):
+#     #tempy based simulated map generation to save time
+#     sb = StructureBlurrer()
+#     pdb1 = PDBParser.read_PDB_file('PDB1',input_path)
+#     sim_map = sb.gaussian_blur_real_space(prot=pdb1,resolution=1)
+#     sim_map.write_to_MRC_file(save_path)
 def save_dens_map(save_map_path,new_dens,
                               origin_map_path):
 

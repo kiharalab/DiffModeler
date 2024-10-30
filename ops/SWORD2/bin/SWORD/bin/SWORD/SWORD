@@ -45,7 +45,7 @@ my @globqual;
 
 sub main {
 
-    my ( $path, $PDB, $dir, $chain, $download, $max, $size ) = (undef) x 7;
+    my ( $path, $PDB, $dir, $chain, $download, $max, $size , $nbcpu ) = (undef) x 8;
 
     my $help = (@ARGV) ? 0 : 1;
 
@@ -58,8 +58,8 @@ sub main {
         'max=s'    => \$max,
         'verbose'  => \$verbose,
         'size=s'   => \$size,
-        'dir=s'    => \$dir
-
+        'dir=s'    => \$dir,
+        'nbcpu=s'  => \$nbcpu
     );
 
     helper() if ($help);
@@ -72,6 +72,7 @@ sub main {
     die "\nError: -m argument must be 3, 9 or 15\n"
       if ( $max !~ m/^$|^3$|^9$|^15$/ );
     die "\nError: -r argument required\n" if ( !$dir );
+    die "\nError: the number of CPUs should be positive\n" if ( $nbcpu < 0 );
 
     if ( not defined $size ) {
         $size = 30;
@@ -100,7 +101,6 @@ sub main {
 
     $path = $dir;
 
-    print STDERR "Peel $PDB: ";
     my $ori_name = $PDB;    # original input name
     my $rename_after;
 
@@ -141,7 +141,7 @@ sub main {
 
         unless ( -e "$name_root/file_pu_delineation.mtx" ) {
             print "\nPeeling\n" if ($verbose);
-            peeling( $path, $entry );
+            peeling( $path, $entry, $nbcpu );
         }
 
         # If the Protein Peeling succeed, then compute measures
@@ -433,17 +433,13 @@ sub parsing_dssp {
 sub peeling {
     my $path = shift;
     my $PDB  = shift;
+    my $nbcpu = shift;
     $path .= '/PDBs_Clean/';
-    my $prog_peeling = "$dirname/bin/Peeling1141";
-    if ( $osName eq "darwin" ) {
-        $prog_peeling = "$dirname/bin/Peeling1141_macos13_intel_arm64";
-    }
+    my $prog_peeling = "$dirname/bin/Peeling_omp";
 
     my $temp = `mkdir -p $path$PDB/Peeling/`;
-    my $opt_peeling = '-R2 98 -ss2 8 -lspu 30 -mspu 0 -d0 6.0 -delta 1.5 -oss 0 -p 0 -cp 0 -npu 30';
-    my $peeling_output = `$prog_peeling -pdb $path$PDB/$PDB.pdb -dssp $path$PDB/$PDB.dssp $opt_peeling 2> /dev/null`;
-
-    $temp = `mv file_ca_coo.pdb file_matrix_pu_contact.mtx file_proba_contact.mat file_pu_delineation.mtx $path$PDB 2> /dev/null`;
+    my $opt_peeling = '-r 98 -s 8 -l 30 -m 0 -0 6.0 -t 1.5 -o 0 -g 0 -c 0 -n 30 -O '.$path.$PDB.' -C '.$nbcpu;
+    my $peeling_output = `$prog_peeling -p $path$PDB/$PDB.pdb -d $path$PDB/$PDB.dssp $opt_peeling`;
 
     my $i = 1;
     my ( $j, $k, $l ) = (0) x 3;
@@ -791,8 +787,6 @@ sub restore_name {
     `mv $path/XXXX* $path/$name`;
     sleep 1 while ( !( -e "$path/$name" ) );
 
-    `mv $path/PDBs_Clean/XXXX* $path/PDBs_Clean/$name`;
-
     my @files2 = `find $path/PDBs_Clean/$name -name XXXX* -type f`;
 
     for (@files2) {
@@ -877,6 +871,7 @@ sub helper {
       "\t-m, --max            3, 9 or 15: maximum number of alternative assignments (default = 3)\n",
       "\t-s, --size           from 15 to 99: minimal size of Protein Unit (default = 15)\n",
       "\t-r, --dir            path to the working directory in which some outputs will be generated. Ex: ./work",
+      "\t-n, --nbcpu          Number of CPUs for Peeling",
       "\t-v, --verbose        RECOMMANDED: all steps printed on STDOUT\n",
       "\n";
     exit 1;
