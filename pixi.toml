@@ -1,0 +1,35 @@
+[project]
+authors = ["Xiao Wang <wang3702@purdue.edu>", "Han Zhu <zhu773@purdue.edu>", "Genki Terashi <terashi@purdue.edu>", "Manav Taluja <taluja@purdue.edu>", "Daisuke Kihara <dkihara@purdue.edu>"]
+channels = ["nvidia/label/cuda-11.8.0", "nvidia", "conda-forge", "pytorch"]
+description = "DiffModeler is a computational tool using a diffusion model to automatically build full protein complex structure from cryo-EM maps at 0-20A resolution."
+name = "diffmodeler"
+platforms = ["linux-64"]
+version = "2.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.8.*"
+cuda = {version = "*", channel="nvidia/label/cuda-11.8.0"}
+pytorch = {version = "2.0.1.*", channel="pytorch"}
+pytorch-cuda = {version = "11.8.*", channel="pytorch"}
+numba = ">=0.58.1,<0.59"
+numpy = ">=1.24.4,<2"
+scipy = ">=1.10.1,<2"
+tqdm = ">=4.66.6,<5"
+mrcfile = ">=1.5.3,<2"
+pyfftw = ">=0.13.1,<0.14"
+requests = ">=2.32.3,<3"
+plotly = ">=5.24.1,<6"
+pandas = ">=2.0.3,<3"
+setuptools = ">=75.1.0,<76"
+mkl = "==2022.1.0"
+
+[pypi-dependencies]
+progress = ">=1.6, <2"
+numba-progress = ">=1.1.0, <2"
+biotempy = ">=2.1.2, <3"
+kaleido = ">=0.2.1, <0.3"
+prody = "==2.3.0"
+biopython = "==1.73"
+xmltramp2 = ">=3.1.1, <4"
