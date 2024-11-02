@@ -74,8 +74,11 @@ import tarfile
 import zipfile
 import gzip
 from glob import glob
+import rarfile
 
-
+def extract_rar(rar_file, extract_to):                                           
+    with rarfile.RarFile(rar_file) as rf:                                        
+        rf.extractall(extract_to) 
 def extract_compressed_file(file_path, extract_dir):
     """
     Extracts a compressed file to the specified directory.
@@ -102,6 +105,8 @@ def extract_compressed_file(file_path, extract_dir):
     elif file_path.endswith('.zip'):
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
+    elif file_path.endswith('.rar'):
+        extract_rar(file_path, extract_dir)
     else:
         print("Unsupported zipped file format %s" % file_path)
         return
