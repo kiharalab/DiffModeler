@@ -72,7 +72,7 @@ def construct_single_chain_candidate(params,save_path):
     #first build a dict from the input text configure file
     single_chain_pdb_input = os.path.abspath(params['P'])
     single_chain_pdb_dir = os.path.join(save_path,"single_chain_pdb")
-    
+    from ops.pdb_utils import cif2pdb
     #if os.path.exists(single_chain_pdb_dir):
         #shutil.rmtree(single_chain_pdb_dir)
     #delete_dir(single_chain_pdb_dir)
@@ -85,6 +85,12 @@ def construct_single_chain_candidate(params,save_path):
             shutil.rmtree(single_chain_pdb_dir)
         from ops.os_operation import copy_directory
         single_chain_pdb_dir = copy_directory(single_chain_pdb_input,single_chain_pdb_dir)
+    #for every .cif files in the single_chain_pdb_dir, convert them to pdb
+    for file in os.listdir(single_chain_pdb_dir):
+        if file.endswith(".cif"):
+            cur_cif_path = os.path.join(single_chain_pdb_dir,file)
+            cur_pdb_path = os.path.join(single_chain_pdb_dir,file.replace(".cif",".pdb"))
+            cif2pdb(cur_cif_path,cur_pdb_path)
     from ops.io_utils import read_structure_txt
     fitting_dict = read_structure_txt(single_chain_pdb_dir,os.path.abspath(params['M']))
     return fitting_dict

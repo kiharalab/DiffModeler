@@ -9,14 +9,17 @@ def read_structure_txt(input_dir,input_file_path):
     with open(input_file_path,'r') as rfile:
         for line in rfile:
             line = line.strip("\n")
-            if len(line)<=4 or ".pdb" not in line:
+            if len(line)<=4 or (".pdb" not in line and ".cif" not in line):
                 print("invalid line %s"%line)
                 continue #user sometime put empty lines
             line=line.replace('\ufeff', '') #process strange user html format
             split_info= line.split()
-            input_file_path = os.path.join(input_dir,split_info[0])
+            cur_file_name=split_info[0]
+            if cur_file_name.endswith(".cif"):
+                cur_file_name=cur_file_name.replace(".cif",".pdb")
+            input_file_path = os.path.join(input_dir,cur_file_name)
             if not os.path.exists(input_file_path):
-                print("%s file is missing"%split_info[0])
+                print("%s file is missing"%cur_file_name)
                 continue
             structure_dict[input_file_path]=split_info[1:]
     print("structure waiting to be fitted: ",structure_dict)
