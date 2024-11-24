@@ -352,9 +352,14 @@ def cif2pdb(input_cif_path,final_pdb_path):
         chain_ids = block_list.index("_atom_site.label_asym_id")
     atom_type_ids = block_list.index("_atom_site.label_atom_id")
     res_name_ids = block_list.index("_atom_site.label_comp_id")
-    x_ids = block_list.index("_atom_site.Cartn_x")
-    y_ids = block_list.index("_atom_site.Cartn_y")
-    z_ids = block_list.index("_atom_site.Cartn_z")
+    try:
+        x_ids = block_list.index("_atom_site.Cartn_x")
+        y_ids = block_list.index("_atom_site.Cartn_y")
+        z_ids = block_list.index("_atom_site.Cartn_z")
+    except:
+        x_ids = block_list.index("_atom_site.cartn_x")
+        y_ids = block_list.index("_atom_site.cartn_y")
+        z_ids = block_list.index("_atom_site.cartn_z")
     try:
         occu_ids= block_list.index['_atom_site.occupancy']
     except:
