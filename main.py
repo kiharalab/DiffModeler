@@ -4,6 +4,8 @@ from ops.argparser import argparser
 from ops.os_operation import mkdir
 import time
 import shutil
+import sis
+
 def init_save_path(origin_map_path):
     save_path = os.path.join(os.getcwd(), 'Predict_Result')
     mkdir(save_path)
@@ -95,6 +97,70 @@ def construct_single_chain_candidate(params,save_path):
     fitting_dict = read_structure_txt(single_chain_pdb_dir,os.path.abspath(params['M']))
     return fitting_dict
 
+def fix_cif_for_coot(input_cif, output_cif):
+    """
+    Reads a CIF file and ensures:
+    - '_atom_site.auth_asym_id' is copied from '_atom_site.label_asym_id'.
+    - '_atom_site.auth_seq_id' is copied from '_atom_site.label_seq_id'.
+    - All atom entries align properly in the CIF format for Coot.
+    """
+
+    with open(input_cif, 'r') as infile:
+        lines = infile.readlines()
+
+    new_lines = []
+    in_atom_site = False
+    headers = []
+    modified_headers = False
+
+    for line in lines:
+        stripped_line = line.strip()
+
+        # Detect start of _atom_site loop
+        if stripped_line.startswith("loop_"):
+            in_atom_site = False  # Reset detection
+        if stripped_line.startswith("_atom_site."):
+            in_atom_site = True
+            headers.append(stripped_line)
+
+        # Modify header to include '_atom_site.auth_asym_id' and '_atom_site.auth_seq_id'
+        if in_atom_site and not modified_headers and "_atom_site.label_seq_id" in stripped_line:
+            if "_atom_site.auth_asym_id" not in headers:
+                headers.append("_atom_site.auth_asym_id")
+            if "_atom_site.auth_seq_id" not in headers:
+                headers.append("_atom_site.auth_seq_id")
+            modified_headers = True
+            continue  # Skip writing this line since we'll rewrite the headers later
+
+        # Ensure atom data has correct column count
+        if in_atom_site and stripped_line.startswith("ATOM"):
+            parts = stripped_line.split()
+            if len(parts) == len(headers) - 2:  # Missing two columns
+                label_asym_id = parts[5]  # Chain ID
+                label_seq_id = parts[6]  # Residue number
+                parts.insert(7, label_asym_id)  # Insert _atom_site.auth_asym_id
+                parts.insert(8, label_seq_id)  # Insert _atom_site.auth_seq_id
+            elif len(parts) != len(headers):  # If still inconsistent, print warning
+                print(f"WARNING: Inconsistent CIF loop at line:\n {stripped_line}")
+
+            new_line = "  ".join(parts) + "\n"
+            new_lines.append(new_line)
+        else:
+            new_lines.append(line)
+
+    # Write fixed headers at the correct place
+    with open(output_cif, 'w') as outfile:
+        for line in new_lines:
+            if line.strip().startswith("_atom_site."):
+                # Write all headers once at the correct place
+                if headers:
+                    outfile.write("\n".join(headers) + "\n")
+                    headers = []  # Clear headers so they aren't written again
+                continue
+            outfile.write(line)
+
+    print(f"Reformatted CIF file saved as: {output_cif}")
+
 
 
 if __name__ == "__main__":
@@ -168,8 +234,13 @@ if __name__ == "__main__":
     modeling_dir = os.path.join(save_path,"structure_assembling")
     from modeling.assemble_structure import assemble_structure
     source_cif = assemble_structure(diff_trace_map,final_fitting_dict,fitting_dir,modeling_dir,params)
-    output_cif = os.path.join(save_path,"DiffModeler.cif")
+    output_cif = os.path.join(save_path,"DiffModeler_alpha.cif")
     shutil.copy(source_cif,output_cif)
+    # convert the cif format
+    input_cif = output_cif
+    output_cif = os.path.join(save_path, "DiffModeler.cif")
+    fix_cif_for_coot(input_cif, output_cif)
+    
     #generate a cif file to save the fitting score to b-factor field for easier visualization
     #for server visualization on server
     from modeling.pdb_utils import swap_cif_occupancy_bfactor
@@ -177,6 +248,7 @@ if __name__ == "__main__":
     swap_cif_occupancy_bfactor(output_cif,score_specific_path)
 
     print(f"Please check DiffModeler's output structure in {output_cif}")
+
 
 
 
