@@ -4,7 +4,7 @@ from ops.argparser import argparser
 from ops.os_operation import mkdir
 import time
 import shutil
-import sis
+import sys
 
 def init_save_path(origin_map_path):
     save_path = os.path.join(os.getcwd(), 'Predict_Result')
