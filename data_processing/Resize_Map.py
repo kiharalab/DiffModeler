@@ -6,7 +6,7 @@ import argparse
 import os
 
 def my_reform_1a(input_mrc, output_mrc, use_gpu=False):
-    with torch.no_grad() and torch.amp.autocast(device_type="cuda", enabled=use_gpu):
+    with torch.no_grad() and torch.autocast(device_type="cuda", enabled=use_gpu):
         with mrcfile.open(input_mrc, permissive=True) as orig_map:
             orig_voxel_size = np.array([orig_map.voxel_size.x, orig_map.voxel_size.y, orig_map.voxel_size.z])
             if orig_voxel_size[0] == 1 and orig_voxel_size[1] == 1 and orig_voxel_size[2] == 1:
