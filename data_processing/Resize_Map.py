@@ -28,7 +28,7 @@ def my_reform_1a(input_mrc, output_mrc, use_gpu=False):
             new_grid_size = np.floor(new_grid_size).astype(np.int32)  # ZYX
             print(f"[{input_mrc}] New Grid Size (int) (ZYX): {new_grid_size[0]}, {new_grid_size[1]}, {new_grid_size[2]}")
 
-            kwargs = {"indexing": "ij"} if (torch.__version__.split(".")[0] >= "2" or torch.__version__.split(".")[1] >= "10") else {}
+            kwargs = {"indexing": "ij"} if (int(torch.__version__.split(".")[0]) >= 2 or int(torch.__version__.split(".")[1]) >= 10) else {}
 
             z = (
                 torch.arange(0, new_grid_size[0], device="cuda" if use_gpu else "cpu") / orig_voxel_size[2] / (orig_data.shape[2] - 1) * 2
