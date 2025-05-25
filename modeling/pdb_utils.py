@@ -185,10 +185,14 @@ def rename_chains_pdb2cif(pdb_file,  new_chain_id,cif_file):
             new_line += atom_type+"\t"
             new_line += line[12:16]+"\t"
             # new_line += line[16]+"\t"
+            # alt-id
+            new_line += "." + "\t"
             new_line += line[17:20]+"\t"
             new_line += new_chain_id+"\t"
             new_line += line[22:26]+"\t"
-            new_line += line[26]+"\t"
+            #new_line += line[26]+"\t"
+            new_line += "1" + "\t"
+            new_line += "?" + "\t"
             new_line += line[30:38]+"\t"
             new_line += line[38:46]+"\t"
             new_line += line[46:54]+"\t"
@@ -214,9 +218,13 @@ def rename_chains_pdb2cif(pdb_file,  new_chain_id,cif_file):
         f.write("_atom_site.id\n")
         f.write("_atom_site.type_symbol\n")
         f.write("_atom_site.label_atom_id\n")
+        # new column: alternative position
+        f.write("_atom_site.label_alt_id\n")
         f.write("_atom_site.label_comp_id\n")
         f.write("_atom_site.label_asym_id\n")
         f.write("_atom_site.label_seq_id\n")
+        f.write("_atom_site.pdbx_PDB_model_num\n")
+        f.write("_atom_site.pdbx_PDB_ins_code\n")
         f.write("_atom_site.Cartn_x\n")
         f.write("_atom_site.Cartn_y\n")
         f.write("_atom_site.Cartn_z\n")

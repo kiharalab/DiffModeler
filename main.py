@@ -136,10 +136,14 @@ def fix_cif_for_coot(input_cif, output_cif):
         if in_atom_site and stripped_line.startswith("ATOM"):
             parts = stripped_line.split()
             if len(parts) == len(headers) - 2:  # Missing two columns
-                label_asym_id = parts[5]  # Chain ID
-                label_seq_id = parts[6]  # Residue number
-                parts.insert(7, label_asym_id)  # Insert _atom_site.auth_asym_id
-                parts.insert(8, label_seq_id)  # Insert _atom_site.auth_seq_id
+                chain_idx = headers.index("_atom_site.label_asym_id")
+                seq_idx = headers.index("_atom_site.label_seq_id")
+                label_asym_id = parts[chain_idx]  # Chain ID
+                label_seq_id = parts[seq_idx]  # Residue number
+
+                insert_idx = seq_idx + 1
+                parts.insert(insert_idx, label_asym_id)  # Insert _atom_site.auth_asym_id
+                parts.insert(insert_idx + 1, label_seq_id)  # Insert _atom_site.auth_seq_id
             elif len(parts) != len(headers):  # If still inconsistent, print warning
                 print(f"WARNING: Inconsistent CIF loop at line:\n {stripped_line}")
 
@@ -248,8 +252,3 @@ if __name__ == "__main__":
     swap_cif_occupancy_bfactor(output_cif,score_specific_path)
 
     print(f"Please check DiffModeler's output structure in {output_cif}")
-
-
-
-
-
