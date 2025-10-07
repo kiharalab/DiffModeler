@@ -1,18 +1,55 @@
-import os
-from ops.os_operation import mkdir, functToDeleteItems
-from ops.io_utils import download_file
-from ops.pdb_utils import count_atom_line, filter_chain_cif, cif2pdb, filter_chain_pdb, count_residues
-from ops.fasta_utils import read_fasta, write_all_fasta
-from ops.io_utils import write_pickle, load_pickle
 from collections import defaultdict
+import os
 import time
+
 import requests
+
+from ops.os_operation import mkdir, functToDeleteItems
+from ops.pdb_utils import (
+    count_atom_line,
+    filter_chain_cif,
+    cif2pdb,
+    filter_chain_pdb,
+    count_residues,
+)
+from ops.fasta_utils import read_fasta, write_all_fasta
+from ops.io_utils import write_pickle, load_pickle, download_file
+
+
+def get_afdb_pdb_url(model_id: str, max_retry: int = 10) -> str:
+    """
+    get available download url from AFDB api.
+    input should be a form of 'AF-A0A1B0GTW7-F1'
+
+    """
+    # uniprot ID format
+    # 1. XXXXXX (single string/number)
+    # 2. XXXXXX-1 (with isoform ID)
+    # API is only searchable without isoform ID, but it returns all isoforms.
+
+    uniprot_id = model_id.split("-")[1]
+    url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}"
+    while max_retry > 0:
+        try:
+            r = requests.get(url)
+            if r.status_code == 200:
+                break
+        except:
+            max_retry = max_retry - 1
+            print(f"request failed, retring in 30 seconds... {url}")
+            time.sleep(30)
+    # r.raise_for_status()
+    for d in r.json():
+        if d["modelEntityId"] == model_id:
+            return d["pdbUrl"]
+    # I don't know what is going on in this case...
+    return r.json()[0]["pdbUrl"]
 
 
 def parse_blast_output(blast_file):
     match_dict = defaultdict(list)
     read_flag = False
-    with open(blast_file, 'r') as rfile:
+    with open(blast_file, "r") as rfile:
         all_lines = rfile.readlines()
         for line_index, line in enumerate(all_lines):
             if line.startswith("Query="):
@@ -84,7 +121,7 @@ def get_metadata(pdb_id, max_retry, type, chain_id=None):
                 return response.json()
         except:
             max_retry -= 1  # try again
-            print("url failed, retry after 30 seconds %s"%url)
+            print("url failed, retry after 30 seconds %s" % url)
             time.sleep(30)
         finally:
             max_retry -= 1  # try again after 30 seconds
@@ -96,31 +133,38 @@ def fasta_searchdb(params, save_path):
     single_chain_pdb_dir = os.path.join(save_path, "single_chain_pdb")
     mkdir(single_chain_pdb_dir)
     fitting_pickle_path = os.path.join(save_path, "fitting_dict.pkl")
-    if os.path.exists(fitting_pickle_path) and os.path.getsize(fitting_pickle_path) > 10:
+    if (
+        os.path.exists(fitting_pickle_path)
+        and os.path.getsize(fitting_pickle_path) > 10
+    ):
         fitting_dict = load_pickle(fitting_pickle_path)
-        #check all the path exists, otherwise do not allow skip
-        use_flag=True
+        # check all the path exists, otherwise do not allow skip
+        use_flag = True
         for key in fitting_dict:
             if not os.path.exists(key):
-                use_flag=False
+                use_flag = False
                 break
         if use_flag:
             return fitting_dict
         else:
             print("some of the pdb files in the dict are missing, re-searching")
     # reorganize data
-    fasta_path = os.path.abspath(params['P'])
+    fasta_path = os.path.abspath(params["P"])
     chain_dict = read_fasta(fasta_path)
-    if len(chain_dict)==0:
+    if len(chain_dict) == 0:
         return {}
     fasta_path = os.path.join(single_chain_pdb_dir, "input.fasta")
     write_all_fasta(chain_dict, fasta_path)
 
     # first do experimental database search
-    if not params['af_only']:
+    if not params["af_only"]:
         output_path = os.path.join(single_chain_pdb_dir, "exp_search.out")
-        search_command = "blastp -query %s -db %s -out %s -num_threads %d" % (fasta_path, params['db_exp_path'],
-                                                                              output_path, params['search_thread'])
+        search_command = "blastp -query %s -db %s -out %s -num_threads %d" % (
+            fasta_path,
+            params["db_exp_path"],
+            output_path,
+            params["search_thread"],
+        )
         if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
             os.system(search_command)
         exp_match_dict = parse_blast_output(output_path)
@@ -138,15 +182,26 @@ def fasta_searchdb(params, save_path):
             match_id, evalue = current_match_list[k]
             if evalue == 0:
                 # fetch the pdb to see if the protein size really reasonable
-                expected_seq_length = len(chain_dict[key]) * params['search']['length_ratio']
-                max_allow_length = len(chain_dict[key]) * params['search']['max_length_ratio']
+                expected_seq_length = (
+                    len(chain_dict[key]) * params["search"]["length_ratio"]
+                )
+                max_allow_length = (
+                    len(chain_dict[key]) * params["search"]["max_length_ratio"]
+                )
                 chain_name_list = key.replace(",", "-")
-                current_chain_dir = os.path.join(single_chain_pdb_dir, str(chain_name_list)[:max_file_name_limit])
+                current_chain_dir = os.path.join(
+                    single_chain_pdb_dir, str(chain_name_list)[:max_file_name_limit]
+                )
                 mkdir(current_chain_dir)
-                final_pdb_path = os.path.join(single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb")
+                final_pdb_path = os.path.join(
+                    single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb"
+                )
                 download_pdb(match_id, current_chain_dir, final_pdb_path)
                 actual_structure_length = count_residues(final_pdb_path)
-                if actual_structure_length >= expected_seq_length and actual_structure_length <= max_allow_length:
+                if (
+                    actual_structure_length >= expected_seq_length
+                    and actual_structure_length <= max_allow_length
+                ):
                     matched_dict[key] = "PDB:" + match_id
                     final_chain_list = chain_name_list.split("-")
                     fitting_dict[final_pdb_path] = final_chain_list
@@ -160,22 +215,33 @@ def fasta_searchdb(params, save_path):
     # write a new fasta to search
 
     remain_chain_dict = {k: v for k, v in chain_dict.items() if k not in matched_keys}
-    print("experimental db search finished, get %s/%s matched single chain structure" % (
-        len(matched_keys), len(chain_dict)))
+    print(
+        "experimental db search finished, get %s/%s matched single chain structure"
+        % (len(matched_keys), len(chain_dict))
+    )
     if len(remain_chain_dict) > 0:
-        print("continue PDB+AFDB search for remained %d chains" % len(remain_chain_dict))
+        print(
+            "continue PDB+AFDB search for remained %d chains" % len(remain_chain_dict)
+        )
         remain_fasta_path = os.path.join(single_chain_pdb_dir, "remain_search.fasta")
         write_all_fasta(remain_chain_dict, remain_fasta_path)
         output_path = os.path.join(single_chain_pdb_dir, "expaf_search.out")
-        search_command = "blastp -query %s -db %s -out %s -num_threads %d" % (remain_fasta_path, params['db_path'],
-                                                                              output_path, params['search_thread'])
+        search_command = "blastp -query %s -db %s -out %s -num_threads %d" % (
+            remain_fasta_path,
+            params["db_path"],
+            output_path,
+            params["search_thread"],
+        )
         if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
             os.system(search_command)
         expaf_match_dict = parse_blast_output(output_path)
         if len(expaf_match_dict) != len(remain_chain_dict):
             for tmp_key in remain_chain_dict:
                 if tmp_key not in expaf_match_dict:
-                    print("warning, query %s can not find any templates in database" % tmp_key)
+                    print(
+                        "warning, query %s can not find any templates in database"
+                        % tmp_key
+                    )
 
         for key in expaf_match_dict:
             closest_choice = None
@@ -183,14 +249,22 @@ def fasta_searchdb(params, save_path):
             current_match_list = expaf_match_dict[key]
             print("match candidate:", key, current_match_list)
             chain_name_list = key.replace(",", "-")
-            current_chain_dir = os.path.join(single_chain_pdb_dir, str(chain_name_list)[:max_file_name_limit])
+            current_chain_dir = os.path.join(
+                single_chain_pdb_dir, str(chain_name_list)[:max_file_name_limit]
+            )
             mkdir(current_chain_dir)
-            final_pdb_path = os.path.join(single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb")
-            expected_seq_length = len(chain_dict[key]) * params['search']['length_ratio']
-            max_allow_length = len(chain_dict[key]) * params['search']['max_length_ratio']
+            final_pdb_path = os.path.join(
+                single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb"
+            )
+            expected_seq_length = (
+                len(chain_dict[key]) * params["search"]["length_ratio"]
+            )
+            max_allow_length = (
+                len(chain_dict[key]) * params["search"]["max_length_ratio"]
+            )
             for k in range(len(current_match_list)):
                 match_id, evalue = current_match_list[k]
-                if params['af_only']:
+                if params["af_only"]:
                     if "AFDB" not in match_id:
                         continue
                 if "AFDB" in match_id:
@@ -201,17 +275,27 @@ def fasta_searchdb(params, save_path):
                     metadata = get_metadata(pdb_id.split("-")[1], 3, "afdb")
 
                     try:
-                        actual_structure_length = metadata["uniprot_entry"]["sequence_length"]
+                        actual_structure_length = metadata["uniprot_entry"][
+                            "sequence_length"
+                        ]
                     except:
                         print("get metadata failed for %s" % pdb_id)
                         actual_structure_length = 0
                 else:
-                    metadata = get_metadata(match_id.split("_")[0], 3, "pdb", match_id.split("_")[1])
+                    metadata = get_metadata(
+                        match_id.split("_")[0], 3, "pdb", match_id.split("_")[1]
+                    )
                     try:
                         actual_structure_length = 0
-                        segments = metadata[match_id.split("_")[0].lower()]["molecules"][0]["chains"][0]["observed"]
+                        segments = metadata[match_id.split("_")[0].lower()][
+                            "molecules"
+                        ][0]["chains"][0]["observed"]
                         for segment in segments:
-                            actual_structure_length += segment["end"]["residue_number"] - segment["start"]["residue_number"] + 1
+                            actual_structure_length += (
+                                segment["end"]["residue_number"]
+                                - segment["start"]["residue_number"]
+                                + 1
+                            )
                         # download_pdb(match_id, current_chain_dir, final_pdb_path)
                         # actual_structure_length = count_residues(final_pdb_path)
                         # os.remove(final_pdb_path)
@@ -224,7 +308,9 @@ def fasta_searchdb(params, save_path):
                     # save the top 1 in case of no length match
                     top1_structure_length = actual_structure_length
 
-                curr_seq_length_diff = abs(expected_seq_length - actual_structure_length)
+                curr_seq_length_diff = abs(
+                    expected_seq_length - actual_structure_length
+                )
 
                 if expected_seq_length <= actual_structure_length <= max_allow_length:
                     if "AFDB" in match_id:
@@ -240,25 +326,32 @@ def fasta_searchdb(params, save_path):
                     num_res_difference = curr_seq_length_diff
                     closest_choice = match_id
             if closest_choice is not None:
-                print("Closest choice is %s with %d difference" % (closest_choice,num_res_difference))
+                print(
+                    "Closest choice is %s with %d difference"
+                    % (closest_choice, num_res_difference)
+                )
 
             if key not in matched_dict:  # no match under length condition
-                if params['af_only'] and closest_choice is None:
+                if params["af_only"] and closest_choice is None:
                     # we can only pick the top 1 candidate
                     match_id, evalue = current_match_list[0]
                     closest_choice = match_id
-                    num_res_difference = abs(expected_seq_length - top1_structure_length)
+                    num_res_difference = abs(
+                        expected_seq_length - top1_structure_length
+                    )
 
                 if "AFDB" in closest_choice:
                     matched_dict[key] = closest_choice
                 else:
                     matched_dict[key] = "PDB:" + closest_choice
-                print("we have no better choice but pick %s with %d residues differences" % (
-                    closest_choice, num_res_difference))
+                print(
+                    "we have no better choice but pick %s with %d residues differences"
+                    % (closest_choice, num_res_difference)
+                )
 
             # download the closest choice as final
             if "AFDB" in closest_choice:
-                download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb" % closest_choice.split(":")[1]
+                download_link = get_afdb_pdb_url(closest_choice.split(":")[1])
                 download_flag = download_file(download_link, final_pdb_path)
                 if download_flag is False:
                     time.sleep(60)
@@ -272,14 +365,21 @@ def fasta_searchdb(params, save_path):
     for chain_name_list in chain_dict:
         if chain_name_list not in matched_dict:
             print("*" * 100)
-            print("WARNING! query %s can not find any templates in database" % chain_name_list)
+            print(
+                "WARNING! query %s can not find any templates in database"
+                % chain_name_list
+            )
             print("*" * 100)
             continue
         matched_id = matched_dict[chain_name_list]
         chain_name_list = chain_name_list.replace(",", "-")
-        current_chain_dir = os.path.join(single_chain_pdb_dir, str(chain_name_list)[:max_file_name_limit])
+        current_chain_dir = os.path.join(
+            single_chain_pdb_dir, str(chain_name_list)[:max_file_name_limit]
+        )
         mkdir(current_chain_dir)
-        final_pdb_path = os.path.join(single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb")
+        final_pdb_path = os.path.join(
+            single_chain_pdb_dir, chain_name_list[:max_file_name_limit] + ".pdb"
+        )
         if final_pdb_path in fitting_dict:
             continue
         if os.path.exists(final_pdb_path) and count_atom_line(final_pdb_path) >= 50:
@@ -291,7 +391,7 @@ def fasta_searchdb(params, save_path):
         pdb_id = split_info[1]
         if database == "AFDB":
             # alphafold db
-            download_link = "https://alphafold.ebi.ac.uk/files/%s-model_v4.pdb" % pdb_id
+            download_link = get_afdb_pdb_url(pdb_id)
             download_flag = download_file(download_link, final_pdb_path)
             if download_flag is False:
                 time.sleep(60)
