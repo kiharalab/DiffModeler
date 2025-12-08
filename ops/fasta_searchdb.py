@@ -1,6 +1,8 @@
 from collections import defaultdict
 import os
 import time
+import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
@@ -16,11 +18,12 @@ from ops.fasta_utils import read_fasta, write_all_fasta
 from ops.io_utils import write_pickle, load_pickle, download_file
 
 
-def get_afdb_pdb_url(model_id: str, max_retry: int = 10) -> str:
+def get_afdb_pdb_url(model_id: str, max_retry: int = 2):
     """
     get available download url from AFDB api.
     input should be a form of 'AF-A0A1B0GTW7-F1'
 
+    Returns the pdbUrl if found, None otherwise.
     """
     # uniprot ID format
     # 1. XXXXXX (single string/number)
@@ -34,16 +37,28 @@ def get_afdb_pdb_url(model_id: str, max_retry: int = 10) -> str:
             r = requests.get(url)
             if r.status_code == 200:
                 break
+            elif r.status_code == 404:
+                print(f"AlphaFold prediction not found (404) for UniProt ID: {uniprot_id}")
+                return None
         except:
             max_retry = max_retry - 1
-            print(f"request failed, retring in 30 seconds... {url}")
-            time.sleep(30)
-    # r.raise_for_status()
-    for d in r.json():
+            print(f"request failed, retring in 5 seconds... {url}")
+            time.sleep(5)
+
+    response_data = r.json()
+
+    # Check if response is empty
+    if not response_data:
+        print(f"No AlphaFold prediction found for UniProt ID: {uniprot_id} (model: {model_id})")
+        return None
+
+    # Try to find exact match first
+    for d in response_data:
         if d["modelEntityId"] == model_id:
             return d["pdbUrl"]
-    # I don't know what is going on in this case...
-    return r.json()[0]["pdbUrl"]
+
+    # Fallback to first entry if no exact match
+    return response_data[0]["pdbUrl"]
 
 
 def parse_blast_output(blast_file):
@@ -113,19 +128,83 @@ def get_metadata(pdb_id, max_retry, type, chain_id=None):
         url = f"https://www.ebi.ac.uk/pdbe/api/pdb/entry/polymer_coverage/{pdb_id}/chain/{chain_id}"
     elif type == "afdb":
         url = f"https://alphafold.ebi.ac.uk/api/uniprot/summary/{pdb_id}.json"
-    print("fetching metadata from %s" % url)
+    # print("fetching metadata from %s" % url)
     while max_retry > 0:
         try:
             response = requests.get(url)
             if response.status_code == 200:
                 return response.json()
+            if response.status_code == 404:
+                print(f"Fetching metadata failed (404): {url} for {pdb_id} {chain_id}")
+                return None
         except:
             max_retry -= 1  # try again
-            print("url failed, retry after 30 seconds %s" % url)
-            time.sleep(30)
+            print("Fetching metadata failed, retrying after 5 seconds %s" % url)
+            time.sleep(5)
         finally:
             max_retry -= 1  # try again after 30 seconds
     return None  # explicitly return None
+
+
+def fetch_afdb_candidate(match_id, pdb_id, uniprot_id):
+    """Fetch metadata and download URL for an AFDB candidate."""
+    try:
+        # Prefetch metadata
+        metadata = get_metadata(uniprot_id, 3, "afdb")
+        if metadata is None:
+            return None
+        
+        # Prefetch download URL
+        download_link = get_afdb_pdb_url(pdb_id)
+        if download_link is None:
+            return None
+        
+        try:
+            actual_structure_length = metadata["uniprot_entry"]["sequence_length"]
+        except:
+            return None
+        
+        return {
+            "match_id": match_id,
+            "actual_structure_length": actual_structure_length,
+            "download_link": download_link,
+            "metadata": metadata
+        }
+    except Exception as e:
+        print(f"Error fetching AFDB candidate {pdb_id}: {e}")
+        return None
+
+
+def fetch_pdb_candidate(match_id):
+    """Fetch metadata for a PDB candidate."""
+    try:
+        pdb_id = match_id.split("_")[0]
+        chain_id = match_id.split("_")[1]
+        metadata = get_metadata(pdb_id, 3, "pdb", chain_id)
+        if metadata is None:
+            return None
+        
+        try:
+            actual_structure_length = 0
+            segments = metadata[pdb_id.lower()]["molecules"][0]["chains"][0]["observed"]
+            for segment in segments:
+                actual_structure_length += (
+                    segment["end"]["residue_number"]
+                    - segment["start"]["residue_number"]
+                    + 1
+                )
+        except:
+            return None
+        
+        return {
+            "match_id": match_id,
+            "actual_structure_length": actual_structure_length,
+            "download_link": None,  # PDB downloads handled separately
+            "metadata": metadata
+        }
+    except Exception as e:
+        print(f"Error fetching PDB candidate {match_id}: {e}")
+        return None
 
 
 def fasta_searchdb(params, save_path):
@@ -172,6 +251,7 @@ def fasta_searchdb(params, save_path):
         exp_match_dict = {}  # empty dict
     matched_dict = {}  # [key]: chain id list, [value]: the structure id
     fitting_dict = {}
+    best_candidate_info = {}  # Store best candidate info for each chain
     # parse the information
 
     # merge only identical chains, otherwise, rely on combine search
@@ -205,6 +285,20 @@ def fasta_searchdb(params, save_path):
                     matched_dict[key] = "PDB:" + match_id
                     final_chain_list = chain_name_list.split("-")
                     fitting_dict[final_pdb_path] = final_chain_list
+                    # Track best candidate info
+                    best_candidate_info[key] = {
+                        "chain_id": key,
+                        "match_id": match_id,
+                        "matched_id": matched_dict[key],
+                        "actual_structure_length": actual_structure_length,
+                        "expected_seq_length": expected_seq_length,
+                        "max_allow_length": max_allow_length,
+                        "num_res_difference": 0,  # Perfect match
+                        "evalue": evalue,
+                        "download_link": None,
+                        "database": "PDB",
+                        "is_good_match": True
+                    }
                     break
                 else:
                     os.remove(final_pdb_path)
@@ -262,47 +356,68 @@ def fasta_searchdb(params, save_path):
             max_allow_length = (
                 len(chain_dict[key]) * params["search"]["max_length_ratio"]
             )
-            for k in range(len(current_match_list)):
-                match_id, evalue = current_match_list[k]
-                if params["af_only"]:
-                    if "AFDB" not in match_id:
-                        continue
-                if "AFDB" in match_id:
-                    split_info = match_id.split(":")
-                    database = split_info[0]
-                    pdb_id = split_info[1]
-
-                    metadata = get_metadata(pdb_id.split("-")[1], 3, "afdb")
-
+            
+            # Prefetch metadata and download URLs for all candidates
+            valid_candidates = []
+            max_workers = min(len(current_match_list), params.get("search_thread", 16))
+            
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = []
+                candidate_info = {}  # Map futures to (match_id, evalue, index)
+                
+                for k in range(len(current_match_list)):
+                    match_id, evalue = current_match_list[k]
+                    if params["af_only"]:
+                        if "AFDB" not in match_id:
+                            continue
+                    
+                    if "AFDB" in match_id:
+                        split_info = match_id.split(":")
+                        database = split_info[0]
+                        pdb_id = split_info[1]
+                        uniprot_id = pdb_id.split("-")[1]
+                        
+                        future = executor.submit(fetch_afdb_candidate, match_id, pdb_id, uniprot_id)
+                        futures.append(future)
+                        candidate_info[future] = (match_id, evalue, k)
+                    else:
+                        future = executor.submit(fetch_pdb_candidate, match_id)
+                        futures.append(future)
+                        candidate_info[future] = (match_id, evalue, k)
+                
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    match_id, evalue, k = candidate_info[future]
                     try:
-                        actual_structure_length = metadata["uniprot_entry"][
-                            "sequence_length"
-                        ]
-                    except:
-                        print("get metadata failed for %s" % pdb_id)
-                        actual_structure_length = 0
-                else:
-                    metadata = get_metadata(
-                        match_id.split("_")[0], 3, "pdb", match_id.split("_")[1]
-                    )
-                    try:
-                        actual_structure_length = 0
-                        segments = metadata[match_id.split("_")[0].lower()][
-                            "molecules"
-                        ][0]["chains"][0]["observed"]
-                        for segment in segments:
-                            actual_structure_length += (
-                                segment["end"]["residue_number"]
-                                - segment["start"]["residue_number"]
-                                + 1
-                            )
-                        # download_pdb(match_id, current_chain_dir, final_pdb_path)
-                        # actual_structure_length = count_residues(final_pdb_path)
-                        # os.remove(final_pdb_path)
-                        # functToDeleteItems(current_chain_dir)
-                    except:
-                        # print("get metadata failed for %s" % match_id)
-                        actual_structure_length = 0
+                        result = future.result()
+                        if result is not None:
+                            result["evalue"] = evalue
+                            result["index"] = k
+                            valid_candidates.append(result)
+                        else:
+                            if "AFDB" in match_id:
+                                pdb_id = match_id.split(":")[1]
+                                print("get metadata/download URL failed for %s, skipping" % pdb_id)
+                            else:
+                                print("get metadata failed for %s, skipping" % match_id)
+                    except Exception as e:
+                        print(f"Error processing candidate {match_id}: {e}")
+            
+            # Sort valid candidates by their original index to maintain order
+            valid_candidates.sort(key=lambda x: x["index"])
+            # Remove index key after sorting
+            for candidate in valid_candidates:
+                candidate.pop("index", None)
+            
+            if len(valid_candidates) == 0:
+                print("No valid candidates with metadata/download URL for %s" % key)
+                continue
+            
+            # Process valid candidates
+            top1_structure_length = None
+            for k, candidate in enumerate(valid_candidates):
+                match_id = candidate["match_id"]
+                actual_structure_length = candidate["actual_structure_length"]
 
                 if k == 0:
                     # save the top 1 in case of no length match
@@ -319,45 +434,96 @@ def fasta_searchdb(params, save_path):
                         matched_dict[key] = "PDB:" + match_id
                     final_chain_list = chain_name_list.split("-")
                     fitting_dict[final_pdb_path] = final_chain_list
-                    closest_choice = match_id
+                    closest_choice = candidate
+                    # Track best candidate info
+                    best_candidate_info[key] = {
+                        "chain_id": key,
+                        "match_id": match_id,
+                        "matched_id": matched_dict[key],
+                        "actual_structure_length": actual_structure_length,
+                        "expected_seq_length": expected_seq_length,
+                        "max_allow_length": max_allow_length,
+                        "num_res_difference": 0,  # Perfect match
+                        "evalue": candidate["evalue"],
+                        "download_link": candidate.get("download_link"),
+                        "database": "AFDB" if "AFDB" in match_id else "PDB",
+                        "is_good_match": True
+                    }
                     break  # already in match dict, no need to check anymore
 
                 if curr_seq_length_diff < num_res_difference:
                     num_res_difference = curr_seq_length_diff
-                    closest_choice = match_id
-            if closest_choice is not None:
+                    closest_choice = candidate
+            
+            if closest_choice is not None and key not in matched_dict:
+                # Recalculate difference to ensure it's accurate
+                num_res_difference = abs(
+                    expected_seq_length - closest_choice["actual_structure_length"]
+                )
                 print(
                     "Closest choice is %s with %d difference"
-                    % (closest_choice, num_res_difference)
+                    % (closest_choice["match_id"], num_res_difference)
                 )
 
             if key not in matched_dict:  # no match under length condition
                 if params["af_only"] and closest_choice is None:
                     # we can only pick the top 1 candidate
-                    match_id, evalue = current_match_list[0]
-                    closest_choice = match_id
+                    if len(valid_candidates) > 0:
+                        closest_choice = valid_candidates[0]
+                        num_res_difference = abs(
+                            expected_seq_length - closest_choice["actual_structure_length"]
+                        )
+                
+                if closest_choice is not None:
+                    match_id = closest_choice["match_id"]
+                    # Ensure difference is recalculated
                     num_res_difference = abs(
-                        expected_seq_length - top1_structure_length
+                        expected_seq_length - closest_choice["actual_structure_length"]
                     )
-
-                if "AFDB" in closest_choice:
-                    matched_dict[key] = closest_choice
+                    if "AFDB" in match_id:
+                        matched_dict[key] = match_id
+                    else:
+                        matched_dict[key] = "PDB:" + match_id
+                    # Track best candidate info
+                    best_candidate_info[key] = {
+                        "chain_id": key,
+                        "match_id": match_id,
+                        "matched_id": matched_dict[key],
+                        "actual_structure_length": closest_choice["actual_structure_length"],
+                        "expected_seq_length": expected_seq_length,
+                        "max_allow_length": max_allow_length,
+                        "num_res_difference": num_res_difference,
+                        "evalue": closest_choice["evalue"],
+                        "download_link": closest_choice.get("download_link"),
+                        "database": "AFDB" if "AFDB" in match_id else "PDB",
+                        "is_good_match": False
+                    }
+                    print(
+                        "we have no better choice but pick %s with %d residues differences"
+                        % (match_id, num_res_difference)
+                    )
                 else:
-                    matched_dict[key] = "PDB:" + closest_choice
-                print(
-                    "we have no better choice but pick %s with %d residues differences"
-                    % (closest_choice, num_res_difference)
-                )
+                    print("No valid candidate found for %s" % key)
+                    continue
 
             # download the closest choice as final
-            if "AFDB" in closest_choice:
-                download_link = get_afdb_pdb_url(closest_choice.split(":")[1])
-                download_flag = download_file(download_link, final_pdb_path)
-                if download_flag is False:
-                    time.sleep(60)
-                    continue
-            else:
-                download_pdb(closest_choice, current_chain_dir, final_pdb_path)
+            if closest_choice is not None:
+                match_id = closest_choice["match_id"]
+                if "AFDB" in match_id:
+                    download_link = closest_choice["download_link"]
+                    download_flag = download_file(download_link, final_pdb_path)
+                    if download_flag is False:
+                        print("Download failed for %s, removing from matched_dict" % match_id)
+                        if key in matched_dict:
+                            del matched_dict[key]
+                        if final_pdb_path in fitting_dict:
+                            del fitting_dict[final_pdb_path]
+                        if key in best_candidate_info:
+                            del best_candidate_info[key]
+                        time.sleep(60)
+                        continue
+                else:
+                    download_pdb(match_id, current_chain_dir, final_pdb_path)
 
     print("DB search finished! Match relationship ", matched_dict)
     # get the matched dict
@@ -402,4 +568,11 @@ def fasta_searchdb(params, save_path):
         fitting_dict[final_pdb_path] = final_chain_list
     print("collecting finish: fitting dict: ", fitting_dict)
     write_pickle(fitting_dict, fitting_pickle_path)
+    
+    # Save best candidate info to JSON
+    best_candidate_json_path = os.path.join(save_path, "best_candidates.json")
+    with open(best_candidate_json_path, "w") as f:
+        json.dump(best_candidate_info, f, indent=2)
+    print(f"Best candidate info saved to {best_candidate_json_path}")
+    
     return fitting_dict
