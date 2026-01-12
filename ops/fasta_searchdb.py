@@ -101,7 +101,7 @@ def parse_blast_output(blast_file):
     return match_dict
 
 
-def download_pdb(pdb_id, current_chain_dir, final_pdb_path):
+def download_pdb(pdb_id, current_chain_dir, final_pdb_path, first_model_only=True):
     pdb = pdb_id.split("_")[0]
     chain_id = pdb_id.split("_")[1]
     download_link = "https://files.rcsb.org/download/%s.cif" % pdb
@@ -110,7 +110,7 @@ def download_pdb(pdb_id, current_chain_dir, final_pdb_path):
     if os.path.exists(cif_file) and count_atom_line(cif_file) >= 50:
         # segment the specific chains
         chain_cif = os.path.join(current_chain_dir, "input_%s.cif" % chain_id)
-        filter_chain_cif(cif_file, chain_id, chain_cif)
+        filter_chain_cif(cif_file, chain_id, chain_cif, first_model_only=first_model_only)
 
         # then convert cif file format to pdb
         cif2pdb(chain_cif, final_pdb_path)
@@ -119,7 +119,7 @@ def download_pdb(pdb_id, current_chain_dir, final_pdb_path):
         download_link = "https://files.rcsb.org/download/%s.pdb" % pdb
         pdb_file = os.path.join(current_chain_dir, "input.pdb")
         download_file(download_link, pdb_file)
-        filter_chain_pdb(pdb_file, chain_id, final_pdb_path)
+        filter_chain_pdb(pdb_file, chain_id, final_pdb_path, first_model_only=first_model_only)
     return final_pdb_path
 
 

@@ -271,7 +271,7 @@ def reindex_cif(final_pdb_path,final_cif_path):
                 else:
                     wfile.write(line)
 
-def filter_chain_cif(input_cif,select_chain_name,output_cif):
+def filter_chain_cif(input_cif,select_chain_name,output_cif,first_model_only=False):
     begin_check=False
     block_list=[]
     with open(input_cif,'r') as rfile:
@@ -294,6 +294,14 @@ def filter_chain_cif(input_cif,select_chain_name,output_cif):
         chain_ids = block_list.index("_atom_site.auth_asym_id")
     except:
         chain_ids = block_list.index("_atom_site.label_asym_id")
+    # Check if model number field exists
+    model_ids = -1
+    if first_model_only:
+        try:
+            model_ids = block_list.index("_atom_site.pdbx_PDB_model_num")
+        except:
+            pass  # Model field doesn't exist, will process all atoms
+    
     atom_id=1
     seq_id=1
     prev_seq_id=None
@@ -310,6 +318,14 @@ def filter_chain_cif(input_cif,select_chain_name,output_cif):
                     current_chain = split_info[chain_ids]
                     if current_chain!=select_chain_name:
                         continue
+                    # Filter by model number if requested
+                    if first_model_only and model_ids != -1:
+                        try:
+                            current_model = int(split_info[model_ids])
+                            if current_model != 1:
+                                continue
+                        except:
+                            pass  # If we can't parse model number, include the atom
                     current_seq_id = int(split_info[seq_ids])
                     if prev_seq_id is not None and current_seq_id!=prev_seq_id:
                         seq_id+=1
@@ -452,14 +468,15 @@ def get_cif_chain_list(input_cif_path):
 
 # def rename_chain_cif(input_cif_path,chain_dict,output_cif_path):
 
-def filter_chain_pdb(pdb_file_path, chain_name, output_file_path):
+def filter_chain_pdb(pdb_file_path, chain_name, output_file_path, first_model_only=False):
     """
-    Read a PDB file, replace each chain ID based on a dictionary mapping, and write the modified PDB file to disk.
+    Read a PDB file, filter by chain ID and optionally by first model only, and write the modified PDB file to disk.
 
     Args:
     pdb_file_path (str): The path to the input PDB file.
-    chain_dict (dict): A dictionary mapping old chain IDs to new chain IDs.
+    chain_name (str): The chain ID to filter.
     output_file_path (str): The path to the output PDB file.
+    first_model_only (bool): If True, only process atoms from the first model.
 
     Returns:
     None
@@ -467,9 +484,27 @@ def filter_chain_pdb(pdb_file_path, chain_name, output_file_path):
     with open(pdb_file_path, 'r') as f:
         lines = f.readlines()
 
+    current_model = 0
+    in_model = False
+    
     with open(output_file_path, 'w') as f:
         for line in lines:
+            # Track MODEL records
+            if line.startswith('MODEL'):
+                current_model += 1
+                in_model = True
+                if first_model_only and current_model > 1:
+                    break  # Stop processing after first model
+                continue
+            elif line.startswith('ENDMDL'):
+                if first_model_only and current_model == 1:
+                    break  # Stop after first model ends
+                continue
+            
             if line.startswith('ATOM'):
+                # If no MODEL records found, assume single model (current_model == 0)
+                if first_model_only and in_model and current_model > 1:
+                    continue
                 chain_id = line[21]
                 if chain_id!=chain_name:
                     continue
